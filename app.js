@@ -12,8 +12,8 @@ const state = {
   timerId: null,
   current: null,        // {questionText, answer, options:[{label, correct}]}
   settings: {
-    times: { tables: [2,3,4,5,6,7,8,9,10,11,12] },
-    negatives: { tables: [2,3,4,5,6,7,8,9,10,11,12], level: 1 },
+    times: { tables: [] },
+    negatives: { tables: [], level: 1 },
     decimals: { level: 1 },
     algebra: { level: 1, variables: ['x','y'] }
   }
@@ -95,6 +95,11 @@ function buildTimesSettings() {
   label.textContent = 'Which tables?';
   wrap.appendChild(label);
 
+  const hint = document.createElement('p');
+  hint.className = 'settings-hint';
+  hint.textContent = 'Tap the ones you want to practise. Leave none picked for a mix of all of them.';
+  wrap.appendChild(hint);
+
   const row = document.createElement('div');
   row.className = 'chip-row';
   row.id = 'times-chips';
@@ -102,18 +107,18 @@ function buildTimesSettings() {
   const allTables = [2,3,4,5,6,7,8,9,10,11,12];
   allTables.forEach(t => {
     const chip = document.createElement('button');
-    chip.className = 'chip selected';
+    chip.className = 'chip';
     chip.textContent = t + '×';
     chip.dataset.table = t;
     chip.addEventListener('click', () => {
       chip.classList.toggle('selected');
       const selected = $$('#times-chips .chip.selected').map(c => Number(c.dataset.table));
-      state.settings.times.tables = selected.length ? selected : allTables;
+      state.settings.times.tables = selected;
     });
     row.appendChild(chip);
   });
   wrap.appendChild(row);
-  state.settings.times.tables = allTables.slice();
+  state.settings.times.tables = [];
   return wrap;
 }
 
@@ -124,6 +129,11 @@ function buildNegativesSettings() {
   label.textContent = 'Which tables?';
   wrap.appendChild(label);
 
+  const hint = document.createElement('p');
+  hint.className = 'settings-hint';
+  hint.textContent = 'Tap the ones you want to practise. Leave none picked for a mix of all of them.';
+  wrap.appendChild(hint);
+
   const row = document.createElement('div');
   row.className = 'chip-row';
   row.id = 'negatives-chips';
@@ -131,18 +141,18 @@ function buildNegativesSettings() {
   const allTables = [2,3,4,5,6,7,8,9,10,11,12];
   allTables.forEach(t => {
     const chip = document.createElement('button');
-    chip.className = 'chip selected';
+    chip.className = 'chip';
     chip.textContent = t + '×';
     chip.dataset.table = t;
     chip.addEventListener('click', () => {
       chip.classList.toggle('selected');
       const selected = $$('#negatives-chips .chip.selected').map(c => Number(c.dataset.table));
-      state.settings.negatives.tables = selected.length ? selected : allTables;
+      state.settings.negatives.tables = selected;
     });
     row.appendChild(chip);
   });
   wrap.appendChild(row);
-  state.settings.negatives.tables = allTables.slice();
+  state.settings.negatives.tables = [];
 
   const levelLabel = document.createElement('p');
   levelLabel.className = 'settings-label';
