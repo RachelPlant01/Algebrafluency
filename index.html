@@ -79,19 +79,30 @@
     <div class="timer-bar-wrap"><div id="timer-bar" class="timer-bar"></div></div>
 
     <div id="sign-hint" class="sign-hint">
-      <div class="sign-hint-row same">
-        <span class="sign-hint-label">Same signs → +</span>
-        <span class="sign-hint-eq">+ × + = +</span>
-        <span class="sign-hint-eq">− × − = +</span>
-        <span class="sign-hint-eq">+ ÷ + = +</span>
-        <span class="sign-hint-eq">− ÷ − = +</span>
+      <div class="sign-row">
+        <span class="sign-circle pos">+</span><span class="sign-sym">×</span><span class="sign-circle pos">+</span><span class="sign-sym">=</span><span class="sign-circle pos">+</span>
       </div>
-      <div class="sign-hint-row diff">
-        <span class="sign-hint-label">Different signs → −</span>
-        <span class="sign-hint-eq">+ × − = −</span>
-        <span class="sign-hint-eq">− × + = −</span>
-        <span class="sign-hint-eq">+ ÷ − = −</span>
-        <span class="sign-hint-eq">− ÷ + = −</span>
+      <div class="sign-row">
+        <span class="sign-circle pos">+</span><span class="sign-sym">×</span><span class="sign-circle neg">−</span><span class="sign-sym">=</span><span class="sign-circle neg">−</span>
+      </div>
+      <div class="sign-row">
+        <span class="sign-circle neg">−</span><span class="sign-sym">×</span><span class="sign-circle pos">+</span><span class="sign-sym">=</span><span class="sign-circle neg">−</span>
+      </div>
+      <div class="sign-row">
+        <span class="sign-circle neg">−</span><span class="sign-sym">×</span><span class="sign-circle neg">−</span><span class="sign-sym">=</span><span class="sign-circle pos">+</span>
+      </div>
+      <div class="sign-divider"></div>
+      <div class="sign-row">
+        <span class="sign-circle pos">+</span><span class="sign-sym">÷</span><span class="sign-circle pos">+</span><span class="sign-sym">=</span><span class="sign-circle pos">+</span>
+      </div>
+      <div class="sign-row">
+        <span class="sign-circle pos">+</span><span class="sign-sym">÷</span><span class="sign-circle neg">−</span><span class="sign-sym">=</span><span class="sign-circle neg">−</span>
+      </div>
+      <div class="sign-row">
+        <span class="sign-circle neg">−</span><span class="sign-sym">÷</span><span class="sign-circle pos">+</span><span class="sign-sym">=</span><span class="sign-circle neg">−</span>
+      </div>
+      <div class="sign-row">
+        <span class="sign-circle neg">−</span><span class="sign-sym">÷</span><span class="sign-circle neg">−</span><span class="sign-sym">=</span><span class="sign-circle pos">+</span>
       </div>
     </div>
 
@@ -99,6 +110,7 @@
       <div id="question" class="question"></div>
     </div>
 
+    <p id="answers-hint" class="answers-hint"></p>
     <div id="answers" class="answers-grid"></div>
 
     <div id="feedback-flash" class="feedback-flash"></div>

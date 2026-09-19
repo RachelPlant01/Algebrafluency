@@ -245,32 +245,42 @@ html, body {
 .sign-hint {
   display: none;
   background: white;
-  border-radius: 14px;
-  padding: 10px 12px;
+  border-radius: 16px;
+  padding: 10px 8px;
   margin-bottom: 14px;
   box-shadow: 0 4px 14px -8px rgba(20,30,70,0.25);
 }
-.sign-hint-row {
+.sign-row {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  justify-content: center;
   gap: 6px;
-  padding: 3px 0;
+  padding: 4px 0;
 }
-.sign-hint-label {
-  font-size: 0.72rem;
+.sign-divider {
+  height: 1px;
+  background: #eef1fb;
+  margin: 4px 10px;
+}
+.sign-sym {
+  font-size: 1.05rem;
   font-weight: 800;
-  color: var(--muted);
-  min-width: 92px;
+  color: var(--ink);
 }
-.sign-hint-eq {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 999px;
+.sign-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: inset 0 -2px 3px rgba(0,0,0,0.15);
 }
-.sign-hint-row.same .sign-hint-eq { background: #dcfce7; color: var(--green-dark); }
-.sign-hint-row.diff .sign-hint-eq { background: #fee2e2; color: #b91c1c; }
+.sign-circle.pos { background: #eab308; color: #3a2b00; }
+.sign-circle.neg { background: #dc2626; color: white; }
 
 .question-wrap {
   flex: 1;
@@ -290,6 +300,15 @@ html, body {
 .var-letter {
   font-style: italic;
   font-family: 'Georgia', 'Times New Roman', serif;
+}
+
+.answers-hint {
+  display: none;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0 0 8px;
 }
 
 .answers-grid {
@@ -313,6 +332,7 @@ html, body {
   transition: transform .08s ease;
 }
 .answer-btn:active { transform: scale(.96); }
+.answer-btn.picked { background: #dbeafe; box-shadow: inset 0 0 0 3px var(--blue); }
 .answer-btn.correct { background: var(--ok); color: white; }
 .answer-btn.wrong { background: var(--danger); color: white; }
 .answer-btn[disabled] { pointer-events: none; }
@@ -433,19 +453,30 @@ html, body {
     <div class="timer-bar-wrap"><div id="timer-bar" class="timer-bar"></div></div>
 
     <div id="sign-hint" class="sign-hint">
-      <div class="sign-hint-row same">
-        <span class="sign-hint-label">Same signs → +</span>
-        <span class="sign-hint-eq">+ × + = +</span>
-        <span class="sign-hint-eq">− × − = +</span>
-        <span class="sign-hint-eq">+ ÷ + = +</span>
-        <span class="sign-hint-eq">− ÷ − = +</span>
+      <div class="sign-row">
+        <span class="sign-circle pos">+</span><span class="sign-sym">×</span><span class="sign-circle pos">+</span><span class="sign-sym">=</span><span class="sign-circle pos">+</span>
       </div>
-      <div class="sign-hint-row diff">
-        <span class="sign-hint-label">Different signs → −</span>
-        <span class="sign-hint-eq">+ × − = −</span>
-        <span class="sign-hint-eq">− × + = −</span>
-        <span class="sign-hint-eq">+ ÷ − = −</span>
-        <span class="sign-hint-eq">− ÷ + = −</span>
+      <div class="sign-row">
+        <span class="sign-circle pos">+</span><span class="sign-sym">×</span><span class="sign-circle neg">−</span><span class="sign-sym">=</span><span class="sign-circle neg">−</span>
+      </div>
+      <div class="sign-row">
+        <span class="sign-circle neg">−</span><span class="sign-sym">×</span><span class="sign-circle pos">+</span><span class="sign-sym">=</span><span class="sign-circle neg">−</span>
+      </div>
+      <div class="sign-row">
+        <span class="sign-circle neg">−</span><span class="sign-sym">×</span><span class="sign-circle neg">−</span><span class="sign-sym">=</span><span class="sign-circle pos">+</span>
+      </div>
+      <div class="sign-divider"></div>
+      <div class="sign-row">
+        <span class="sign-circle pos">+</span><span class="sign-sym">÷</span><span class="sign-circle pos">+</span><span class="sign-sym">=</span><span class="sign-circle pos">+</span>
+      </div>
+      <div class="sign-row">
+        <span class="sign-circle pos">+</span><span class="sign-sym">÷</span><span class="sign-circle neg">−</span><span class="sign-sym">=</span><span class="sign-circle neg">−</span>
+      </div>
+      <div class="sign-row">
+        <span class="sign-circle neg">−</span><span class="sign-sym">÷</span><span class="sign-circle pos">+</span><span class="sign-sym">=</span><span class="sign-circle neg">−</span>
+      </div>
+      <div class="sign-row">
+        <span class="sign-circle neg">−</span><span class="sign-sym">÷</span><span class="sign-circle neg">−</span><span class="sign-sym">=</span><span class="sign-circle pos">+</span>
       </div>
     </div>
 
@@ -453,6 +484,7 @@ html, body {
       <div id="question" class="question"></div>
     </div>
 
+    <p id="answers-hint" class="answers-hint"></p>
     <div id="answers" class="answers-grid"></div>
 
     <div id="feedback-flash" class="feedback-flash"></div>
@@ -880,16 +912,28 @@ function genSquaresQuestion() {
   const squareStr = coreScaleToDecimalString(base.mag * base.mag, base.scale * 2);
 
   if (isRoot) {
-    // Square root: always the principal (positive) root — no negative bases here.
-    const options = new Set([baseDisplay]);
-    for (const m of multiplierPool(base.mag, base.max)) {
-      if (options.size >= 4) break;
-      options.add(factorDisplay({ digit: m, scale: base.scale }));
-    }
+    // Square root: every positive number has TWO square roots (+n and -n) —
+    // pupils must pick both. Distractors come as ± pairs of two other
+    // magnitudes so every option is a genuine root of some number in the
+    // same category, never an arbitrary number.
+    const signedDisplay = (mag, sign) => {
+      const d = factorDisplay({ digit: mag, scale: base.scale });
+      return sign < 0 ? '-' + d : d;
+    };
+    const [m1, m2] = multiplierPool(base.mag, base.max);
+    const posLabel = signedDisplay(base.mag, 1);
+    const negLabel = signedDisplay(base.mag, -1);
+    const labels = shuffle([
+      posLabel, negLabel,
+      signedDisplay(m1, 1), signedDisplay(m1, -1),
+      signedDisplay(m2, 1), signedDisplay(m2, -1)
+    ]);
     return {
       questionText: `√${squareStr}`,
-      answerLabel: baseDisplay,
-      options: shuffle(Array.from(options)).map(v => ({ label: v, correct: v === baseDisplay }))
+      answerLabel: `${posLabel} and ${negLabel}`,
+      multiSelect: true,
+      requiredCount: 2,
+      options: labels.map(v => ({ label: v, correct: v === posLabel || v === negLabel }))
     };
   }
 
@@ -1231,14 +1275,68 @@ function nextQuestion() {
   $('#question').innerHTML = state.current.questionText;
   const answersWrap = $('#answers');
   answersWrap.innerHTML = '';
+
+  const hint = $('#answers-hint');
+  if (state.current.multiSelect) {
+    hint.textContent = `Choose all ${state.current.requiredCount} correct answers`;
+    hint.style.display = 'block';
+  } else {
+    hint.style.display = 'none';
+  }
+
   state.current.options.forEach(opt => {
     const btn = document.createElement('button');
     btn.className = 'answer-btn';
     btn.innerHTML = opt.label;
     btn.dataset.correct = opt.correct ? 'true' : 'false';
-    btn.addEventListener('click', () => handleAnswer(btn, opt.correct));
+    if (state.current.multiSelect) {
+      btn.addEventListener('click', () => toggleMultiAnswer(btn));
+    } else {
+      btn.addEventListener('click', () => handleAnswer(btn, opt.correct));
+    }
     answersWrap.appendChild(btn);
   });
+}
+
+function toggleMultiAnswer(btn) {
+  if (btn.disabled) return;
+  btn.classList.toggle('picked');
+  const picked = $$('.answer-btn.picked');
+  if (picked.length >= (state.current.requiredCount || 2)) {
+    finalizeMultiAnswer(picked);
+  }
+}
+
+function finalizeMultiAnswer(picked) {
+  $$('.answer-btn').forEach(b => b.disabled = true);
+  const flash = $('#feedback-flash');
+  const correctButtons = $$('.answer-btn[data-correct="true"]');
+  const allPickedCorrect = picked.every(b => b.dataset.correct === 'true') && picked.length === correctButtons.length;
+
+  if (allPickedCorrect) {
+    picked.forEach(b => b.classList.add('correct'));
+    state.score++;
+    state.streak++;
+    state.correctCount++;
+    state.bestStreak = Math.max(state.bestStreak, state.streak);
+    flash.className = 'feedback-flash flash-correct';
+  } else {
+    picked.forEach(b => b.classList.add(b.dataset.correct === 'true' ? 'correct' : 'wrong'));
+    correctButtons.forEach(b => b.classList.add('correct'));
+    state.streak = 0;
+    state.wrongCount++;
+    flash.className = 'feedback-flash flash-wrong';
+  }
+  requestAnimationFrame(() => { flash.className = 'feedback-flash'; });
+
+  $('#hud-score').textContent = state.score;
+  $('#hud-streak').textContent = state.streak;
+
+  setTimeout(() => {
+    if (state.timerLength === 0 || state.timeLeft > 0) {
+      nextQuestion();
+    }
+  }, 700);
 }
 
 function handleAnswer(btn, correct) {

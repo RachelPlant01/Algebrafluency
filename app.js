@@ -402,16 +402,28 @@ function genSquaresQuestion() {
   const squareStr = coreScaleToDecimalString(base.mag * base.mag, base.scale * 2);
 
   if (isRoot) {
-    // Square root: always the principal (positive) root — no negative bases here.
-    const options = new Set([baseDisplay]);
-    for (const m of multiplierPool(base.mag, base.max)) {
-      if (options.size >= 4) break;
-      options.add(factorDisplay({ digit: m, scale: base.scale }));
-    }
+    // Square root: every positive number has TWO square roots (+n and -n) —
+    // pupils must pick both. Distractors come as ± pairs of two other
+    // magnitudes so every option is a genuine root of some number in the
+    // same category, never an arbitrary number.
+    const signedDisplay = (mag, sign) => {
+      const d = factorDisplay({ digit: mag, scale: base.scale });
+      return sign < 0 ? '-' + d : d;
+    };
+    const [m1, m2] = multiplierPool(base.mag, base.max);
+    const posLabel = signedDisplay(base.mag, 1);
+    const negLabel = signedDisplay(base.mag, -1);
+    const labels = shuffle([
+      posLabel, negLabel,
+      signedDisplay(m1, 1), signedDisplay(m1, -1),
+      signedDisplay(m2, 1), signedDisplay(m2, -1)
+    ]);
     return {
       questionText: `√${squareStr}`,
-      answerLabel: baseDisplay,
-      options: shuffle(Array.from(options)).map(v => ({ label: v, correct: v === baseDisplay }))
+      answerLabel: `${posLabel} and ${negLabel}`,
+      multiSelect: true,
+      requiredCount: 2,
+      options: labels.map(v => ({ label: v, correct: v === posLabel || v === negLabel }))
     };
   }
 
@@ -754,14 +766,68 @@ function nextQuestion() {
   $('#question').innerHTML = state.current.questionText;
   const answersWrap = $('#answers');
   answersWrap.innerHTML = '';
+
+  const hint = $('#answers-hint');
+  if (state.current.multiSelect) {
+    hint.textContent = `Choose all ${state.current.requiredCount} correct answers`;
+    hint.style.display = 'block';
+  } else {
+    hint.style.display = 'none';
+  }
+
   state.current.options.forEach(opt => {
     const btn = document.createElement('button');
     btn.className = 'answer-btn';
     btn.innerHTML = opt.label;
     btn.dataset.correct = opt.correct ? 'true' : 'false';
-    btn.addEventListener('click', () => handleAnswer(btn, opt.correct));
+    if (state.current.multiSelect) {
+      btn.addEventListener('click', () => toggleMultiAnswer(btn));
+    } else {
+      btn.addEventListener('click', () => handleAnswer(btn, opt.correct));
+    }
     answersWrap.appendChild(btn);
   });
+}
+
+function toggleMultiAnswer(btn) {
+  if (btn.disabled) return;
+  btn.classList.toggle('picked');
+  const picked = $$('.answer-btn.picked');
+  if (picked.length >= (state.current.requiredCount || 2)) {
+    finalizeMultiAnswer(picked);
+  }
+}
+
+function finalizeMultiAnswer(picked) {
+  $$('.answer-btn').forEach(b => b.disabled = true);
+  const flash = $('#feedback-flash');
+  const correctButtons = $$('.answer-btn[data-correct="true"]');
+  const allPickedCorrect = picked.every(b => b.dataset.correct === 'true') && picked.length === correctButtons.length;
+
+  if (allPickedCorrect) {
+    picked.forEach(b => b.classList.add('correct'));
+    state.score++;
+    state.streak++;
+    state.correctCount++;
+    state.bestStreak = Math.max(state.bestStreak, state.streak);
+    flash.className = 'feedback-flash flash-correct';
+  } else {
+    picked.forEach(b => b.classList.add(b.dataset.correct === 'true' ? 'correct' : 'wrong'));
+    correctButtons.forEach(b => b.classList.add('correct'));
+    state.streak = 0;
+    state.wrongCount++;
+    flash.className = 'feedback-flash flash-wrong';
+  }
+  requestAnimationFrame(() => { flash.className = 'feedback-flash'; });
+
+  $('#hud-score').textContent = state.score;
+  $('#hud-streak').textContent = state.streak;
+
+  setTimeout(() => {
+    if (state.timerLength === 0 || state.timeLeft > 0) {
+      nextQuestion();
+    }
+  }, 700);
 }
 
 function handleAnswer(btn, correct) {
