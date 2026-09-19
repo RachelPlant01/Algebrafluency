@@ -310,18 +310,31 @@ function genTimesQuestion() {
   const tables = state.settings.times.tables.length ? state.settings.times.tables : [2,3,4,5,6,7,8,9,10,11,12];
   const a = pick(tables);
   const b = randInt(1, 12);
-  const answer = a * b;
+  const product = a * b;
 
-  const options = new Set([answer]);
+  if (Math.random() < 0.5) {
+    // Division: product ÷ table = multiplier — the exact inverse fact.
+    const options = new Set([b]);
+    for (const m of multiplierPool(b)) {
+      if (options.size >= 4) break;
+      options.add(m);
+    }
+    return {
+      questionText: `${product} ÷ ${a}`,
+      answerLabel: String(b),
+      options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === b }))
+    };
+  }
+
+  const options = new Set([product]);
   for (const m of multiplierPool(b)) {
     if (options.size >= 4) break;
     options.add(a * m);
   }
-
   return {
     questionText: `${a} × ${b}`,
-    answerLabel: String(answer),
-    options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === answer }))
+    answerLabel: String(product),
+    options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === product }))
   };
 }
 
@@ -342,24 +355,39 @@ function genNegativesQuestion() {
 
   const a = aSign * aMag;
   const b = bSign * bMag;
-  const answer = a * b;
-  const correctSign = aSign * bSign;
+  const product = a * b;
+  const productSign = aSign * bSign;
+
+  if (Math.random() < 0.5) {
+    // Division: product ÷ table = multiplier, signs and all.
+    const options = new Set([b, -b]);
+    for (const m of multiplierPool(bMag)) {
+      if (options.size >= 4) break;
+      const useFlippedSign = Math.random() < 0.4;
+      options.add((useFlippedSign ? -bSign : bSign) * m);
+    }
+    return {
+      questionText: `${product} ÷ ${a}`,
+      answerLabel: String(b),
+      options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === b }))
+    };
+  }
 
   // Every option is ± (aMag × some multiplier 1-12) — a genuine table value,
   // just possibly with the wrong sign or the wrong multiplier, never an
   // unrelated number.
-  const options = new Set([answer, -answer]);
+  const options = new Set([product, -product]);
   for (const m of multiplierPool(bMag)) {
     if (options.size >= 4) break;
     const magVal = aMag * m;
     const useFlippedSign = Math.random() < 0.4;
-    options.add((useFlippedSign ? -correctSign : correctSign) * magVal);
+    options.add((useFlippedSign ? -productSign : productSign) * magVal);
   }
 
   return {
     questionText: `${a} × ${b}`,
-    answerLabel: String(answer),
-    options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === answer }))
+    answerLabel: String(product),
+    options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === product }))
   };
 }
 
@@ -375,6 +403,11 @@ function factorDisplay(f) {
   if (f.scale >= 0) return String(f.digit * Math.pow(10, f.scale));
   const shift = -f.scale;
   return '0.' + '0'.repeat(shift - 1) + f.digit;
+}
+
+// Keeps a distractor digit within the valid 1-9 range by wrapping around.
+function wrapDigit(d) {
+  return ((d - 1) % 9 + 9) % 9 + 1;
 }
 
 function coreScaleToDecimalString(core, totalScale) {
@@ -409,9 +442,33 @@ function genDecimalsQuestion() {
   const fb = makeFactor(kindB);
   const core = fa.digit * fb.digit;
   const totalScale = fa.scale + fb.scale;
-  const answer = coreScaleToDecimalString(core, totalScale);
+  const productStr = coreScaleToDecimalString(core, totalScale);
 
-  const optionSet = new Set([answer]);
+  if (Math.random() < 0.5) {
+    // Division: product ÷ one factor = the other factor, the exact inverse.
+    const [divisor, quotient] = Math.random() < 0.5 ? [fa, fb] : [fb, fa];
+    const answer = factorDisplay(quotient);
+    const optionSet = new Set([answer]);
+    const variantMakers = [
+      () => factorDisplay({ digit: quotient.digit, scale: quotient.scale + 1 }),
+      () => factorDisplay({ digit: quotient.digit, scale: quotient.scale - 1 }),
+      () => factorDisplay({ digit: wrapDigit(quotient.digit + pick([-1,1,2,-2])), scale: quotient.scale }),
+      () => factorDisplay({ digit: quotient.digit, scale: quotient.scale + pick([-2,2]) })
+    ];
+    let guard = 0;
+    while (optionSet.size < 4 && guard < 40) {
+      guard++;
+      const val = pick(variantMakers)();
+      if (val !== answer && Number(val) > 0) optionSet.add(val);
+    }
+    return {
+      questionText: `${productStr} ÷ ${factorDisplay(divisor)}`,
+      answerLabel: answer,
+      options: shuffle(Array.from(optionSet)).map(v => ({ label: v, correct: v === answer }))
+    };
+  }
+
+  const optionSet = new Set([productStr]);
   const variantMakers = [
     () => coreScaleToDecimalString(core, totalScale + 1),
     () => coreScaleToDecimalString(core, totalScale - 1),
@@ -423,13 +480,13 @@ function genDecimalsQuestion() {
   while (optionSet.size < 4 && guard < 40) {
     guard++;
     const val = pick(variantMakers)();
-    if (val !== answer && Number(val) > 0) optionSet.add(val);
+    if (val !== productStr && Number(val) > 0) optionSet.add(val);
   }
 
   return {
     questionText: `${factorDisplay(fa)} × ${factorDisplay(fb)}`,
-    answerLabel: answer,
-    options: shuffle(Array.from(optionSet)).map(v => ({ label: v, correct: v === answer }))
+    answerLabel: productStr,
+    options: shuffle(Array.from(optionSet)).map(v => ({ label: v, correct: v === productStr }))
   };
 }
 
@@ -495,6 +552,35 @@ function genAlgebraQuestion() {
   }
 
   const result = multiplyTerms(t1, t2);
+
+  if (Math.random() < 0.5) {
+    // Division: (t1 × t2) ÷ one term = the other term, the exact inverse.
+    const [divisor, quotient] = Math.random() < 0.5 ? [t1, t2] : [t2, t1];
+    const answer = formatTerm(quotient.coef, quotient.letter, quotient.exp);
+    const questionText = `${formatTerm(result.coef, result.letter, result.exp)} ÷ ${formatTerm(divisor.coef, divisor.letter, divisor.exp)}`;
+
+    const variants = new Set([answer]);
+    const variantMakers = [
+      () => formatTerm(quotient.coef, quotient.letter, result.exp),                    // forgot to subtract exponents
+      () => formatTerm(quotient.coef, quotient.letter, quotient.exp + 1),              // exponent off by one
+      () => formatTerm(quotient.coef + pick([-2,-1,1,2]), quotient.letter, quotient.exp),
+      () => formatTerm(-quotient.coef, quotient.letter, quotient.exp),                 // sign slip
+      () => formatTerm(result.coef, quotient.letter, quotient.exp)                     // used dividend's coefficient instead of dividing
+    ];
+    let guard = 0;
+    while (variants.size < 4 && guard < 40) {
+      guard++;
+      const val = pick(variantMakers)();
+      if (val !== answer && val !== '0' && val !== '-0') variants.add(val);
+    }
+
+    return {
+      questionText,
+      answerLabel: answer,
+      options: shuffle(Array.from(variants)).map(v => ({ label: v, correct: v === answer }))
+    };
+  }
+
   const answer = formatTerm(result.coef, result.letter, result.exp);
   const questionText = `${formatTerm(t1.coef, t1.letter, t1.exp)} × ${formatTerm(t2.coef, t2.letter, t2.exp)}`;
 
