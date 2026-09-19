@@ -754,24 +754,27 @@ $('#start-btn').addEventListener('click', startGame);
 /* ===================== QUESTION GENERATORS ===================== */
 
 /* ---- Times tables ---- */
+// Builds a shuffled list of multipliers (1-12, excluding `exclude`) with the
+// closest ones to `exclude` first, so distractors are plausible but every
+// option is still a genuine multiple of the table being practised.
+function multiplierPool(exclude) {
+  const near = [exclude-1, exclude+1, exclude-2, exclude+2].filter(m => m >= 1 && m <= 12 && m !== exclude);
+  const others = [1,2,3,4,5,6,7,8,9,10,11,12].filter(m => m !== exclude && !near.includes(m));
+  return shuffle(near).concat(shuffle(others));
+}
+
 function genTimesQuestion() {
   const tables = state.settings.times.tables.length ? state.settings.times.tables : [2,3,4,5,6,7,8,9,10,11,12];
   const a = pick(tables);
   const b = randInt(1, 12);
   const answer = a * b;
+
   const options = new Set([answer]);
-  const strategies = [
-    () => a * (b + pick([-1,1])),
-    () => (a + pick([-1,1])) * b,
-    () => answer + pick([-10,-2,-1,1,2,10]),
-    () => pick(tables) * randInt(1,12)
-  ];
-  let guard = 0;
-  while (options.size < 4 && guard < 30) {
-    guard++;
-    const val = pick(strategies)();
-    if (val > 0 && val !== answer) options.add(val);
+  for (const m of multiplierPool(b)) {
+    if (options.size >= 4) break;
+    options.add(a * m);
   }
+
   return {
     questionText: `${a} × ${b}`,
     answerLabel: String(answer),
@@ -797,20 +800,17 @@ function genNegativesQuestion() {
   const a = aSign * aMag;
   const b = bSign * bMag;
   const answer = a * b;
+  const correctSign = aSign * bSign;
 
-  const options = new Set([answer]);
-  const strategies = [
-    () => -answer,
-    () => aSign * bSign * (aMag * (bMag + pick([-1,1]))),
-    () => aSign * bSign * ((aMag + pick([-1,1])) * bMag),
-    () => answer + pick([-10,-2,-1,1,2,10]),
-    () => -(aSign * bSign) * (aMag * bMag + pick([-2,-1,1,2]))
-  ];
-  let guard = 0;
-  while (options.size < 4 && guard < 30) {
-    guard++;
-    const val = pick(strategies)();
-    if (val !== answer && val !== 0) options.add(val);
+  // Every option is ± (aMag × some multiplier 1-12) — a genuine table value,
+  // just possibly with the wrong sign or the wrong multiplier, never an
+  // unrelated number.
+  const options = new Set([answer, -answer]);
+  for (const m of multiplierPool(bMag)) {
+    if (options.size >= 4) break;
+    const magVal = aMag * m;
+    const useFlippedSign = Math.random() < 0.4;
+    options.add((useFlippedSign ? -correctSign : correctSign) * magVal);
   }
 
   return {
