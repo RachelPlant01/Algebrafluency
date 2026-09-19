@@ -14,6 +14,8 @@
   --purple-dark: #6d3ff0;
   --orange: #f2732f;
   --orange-dark: #d1571c;
+  --pink: #ec4899;
+  --pink-dark: #c22a72;
   --bg: #eef2fb;
   --card: #ffffff;
   --ink: #1b2340;
@@ -85,6 +87,7 @@ html, body {
 .mode-card:active { transform: translateY(1px) scale(.99); }
 
 .mode-times     { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); }
+.mode-squares   { background: linear-gradient(135deg, var(--pink), var(--pink-dark)); }
 .mode-negatives { background: linear-gradient(135deg, var(--orange), var(--orange-dark)); }
 .mode-decimals  { background: linear-gradient(135deg, var(--green), var(--green-dark)); }
 .mode-algebra   { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); }
@@ -146,6 +149,7 @@ html, body {
   border-color: var(--blue);
   color: white;
 }
+.mode-squares-theme .chip.selected { background: var(--pink); border-color: var(--pink); }
 .mode-negatives-theme .chip.selected { background: var(--orange); border-color: var(--orange); }
 .mode-decimals-theme .chip.selected { background: var(--green); border-color: var(--green); }
 .mode-algebra-theme .chip.selected { background: var(--purple); border-color: var(--purple); }
@@ -177,6 +181,7 @@ html, body {
 }
 .start-btn:active { transform: scale(.98); }
 
+.mode-squares-theme .start-btn { background: linear-gradient(135deg, var(--pink), var(--pink-dark)); }
 .mode-negatives-theme .start-btn { background: linear-gradient(135deg, var(--orange), var(--orange-dark)); }
 .mode-decimals-theme .start-btn { background: linear-gradient(135deg, var(--green), var(--green-dark)); }
 .mode-algebra-theme .start-btn { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); }
@@ -368,7 +373,13 @@ html, body {
       <button class="mode-card mode-times" data-mode="times">
         <span class="mode-emoji">✖️</span>
         <span class="mode-name">Times Tables</span>
-        <span class="mode-desc">×, ÷, squares &amp; roots</span>
+        <span class="mode-desc">2× to 12× — × and ÷</span>
+      </button>
+
+      <button class="mode-card mode-squares" data-mode="squares">
+        <span class="mode-emoji">√</span>
+        <span class="mode-name">Squares &amp; Roots</span>
+        <span class="mode-desc">4² = 16&nbsp; &nbsp;√81 = 9</span>
       </button>
 
       <button class="mode-card mode-negatives" data-mode="negatives">
@@ -480,6 +491,7 @@ const state = {
   current: null,        // {questionText, answer, options:[{label, correct}]}
   settings: {
     times: { tables: [] },
+    squares: { numbers: [] },
     negatives: { tables: [], level: 1 },
     decimals: { level: 1 },
     algebra: { level: 1, variables: ['x','y'] }
@@ -520,6 +532,10 @@ const SETTINGS_META = {
     title: 'Times Tables',
     themeClass: 'mode-times-theme'
   },
+  squares: {
+    title: 'Squares & Roots',
+    themeClass: 'mode-squares-theme'
+  },
   negatives: {
     title: 'Negative Numbers',
     themeClass: 'mode-negatives-theme'
@@ -544,6 +560,8 @@ function openSettings(mode) {
 
   if (mode === 'times') {
     body.appendChild(buildTimesSettings());
+  } else if (mode === 'squares') {
+    body.appendChild(buildSquaresSettings());
   } else if (mode === 'negatives') {
     body.appendChild(buildNegativesSettings());
   } else if (mode === 'decimals') {
@@ -586,6 +604,40 @@ function buildTimesSettings() {
   });
   wrap.appendChild(row);
   state.settings.times.tables = [];
+  return wrap;
+}
+
+function buildSquaresSettings() {
+  const wrap = document.createElement('div');
+  const label = document.createElement('p');
+  label.className = 'settings-label';
+  label.textContent = 'Which numbers?';
+  wrap.appendChild(label);
+
+  const hint = document.createElement('p');
+  hint.className = 'settings-hint';
+  hint.textContent = 'Tap the ones you want to practise. Leave none picked for a mix of all of them.';
+  wrap.appendChild(hint);
+
+  const row = document.createElement('div');
+  row.className = 'chip-row';
+  row.id = 'squares-chips';
+
+  const allNumbers = [1,2,3,4,5,6,7,8,9,10,11,12];
+  allNumbers.forEach(n => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = n + '²';
+    chip.dataset.number = n;
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('selected');
+      const selected = $$('#squares-chips .chip.selected').map(c => Number(c.dataset.number));
+      state.settings.squares.numbers = selected;
+    });
+    row.appendChild(chip);
+  });
+  wrap.appendChild(row);
+  state.settings.squares.numbers = [];
   return wrap;
 }
 
@@ -775,44 +827,11 @@ function multiplierPool(exclude) {
 
 function genTimesQuestion() {
   const tables = state.settings.times.tables.length ? state.settings.times.tables : [2,3,4,5,6,7,8,9,10,11,12];
-  const roll = Math.random();
-
-  if (roll < 0.15) {
-    // Square: n² — every option is a genuine square number (m² for m 1-12).
-    const n = pick(tables);
-    const answer = n * n;
-    const options = new Set([answer]);
-    for (const m of multiplierPool(n)) {
-      if (options.size >= 4) break;
-      options.add(m * m);
-    }
-    return {
-      questionText: `${n}²`,
-      answerLabel: String(answer),
-      options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === answer }))
-    };
-  }
-
-  if (roll < 0.3) {
-    // Square root: √(n²) = n — every option is a plausible root, 1-12.
-    const n = pick(tables);
-    const options = new Set([n]);
-    for (const m of multiplierPool(n)) {
-      if (options.size >= 4) break;
-      options.add(m);
-    }
-    return {
-      questionText: `√${n * n}`,
-      answerLabel: String(n),
-      options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === n }))
-    };
-  }
-
   const a = pick(tables);
   const b = randInt(1, 12);
   const product = a * b;
 
-  if (roll < 0.65) {
+  if (Math.random() < 0.5) {
     // Division: product ÷ table = multiplier — the exact inverse fact.
     const options = new Set([b]);
     for (const m of multiplierPool(b)) {
@@ -835,6 +854,39 @@ function genTimesQuestion() {
     questionText: `${a} × ${b}`,
     answerLabel: String(product),
     options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === product }))
+  };
+}
+
+/* ---- Squares & Roots ---- */
+function genSquaresQuestion() {
+  const numbers = state.settings.squares.numbers.length ? state.settings.squares.numbers : [1,2,3,4,5,6,7,8,9,10,11,12];
+  const n = pick(numbers);
+  const square = n * n;
+
+  if (Math.random() < 0.5) {
+    // Square root: √(n²) = n — every option is a plausible root, 1-12.
+    const options = new Set([n]);
+    for (const m of multiplierPool(n)) {
+      if (options.size >= 4) break;
+      options.add(m);
+    }
+    return {
+      questionText: `√${square}`,
+      answerLabel: String(n),
+      options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === n }))
+    };
+  }
+
+  // Square: n² — every option is a genuine square number (m² for m 1-12).
+  const options = new Set([square]);
+  for (const m of multiplierPool(n)) {
+    if (options.size >= 4) break;
+    options.add(m * m);
+  }
+  return {
+    questionText: `${n}²`,
+    answerLabel: String(square),
+    options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === square }))
   };
 }
 
@@ -1108,6 +1160,7 @@ function genAlgebraQuestion() {
 
 function generateQuestion() {
   if (state.mode === 'times') return genTimesQuestion();
+  if (state.mode === 'squares') return genSquaresQuestion();
   if (state.mode === 'negatives') return genNegativesQuestion();
   if (state.mode === 'decimals') return genDecimalsQuestion();
   if (state.mode === 'algebra') return genAlgebraQuestion();

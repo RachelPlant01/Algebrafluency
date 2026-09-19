@@ -7,6 +7,8 @@
   --purple-dark: #6d3ff0;
   --orange: #f2732f;
   --orange-dark: #d1571c;
+  --pink: #ec4899;
+  --pink-dark: #c22a72;
   --bg: #eef2fb;
   --card: #ffffff;
   --ink: #1b2340;
@@ -78,6 +80,7 @@ html, body {
 .mode-card:active { transform: translateY(1px) scale(.99); }
 
 .mode-times     { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); }
+.mode-squares   { background: linear-gradient(135deg, var(--pink), var(--pink-dark)); }
 .mode-negatives { background: linear-gradient(135deg, var(--orange), var(--orange-dark)); }
 .mode-decimals  { background: linear-gradient(135deg, var(--green), var(--green-dark)); }
 .mode-algebra   { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); }
@@ -139,6 +142,7 @@ html, body {
   border-color: var(--blue);
   color: white;
 }
+.mode-squares-theme .chip.selected { background: var(--pink); border-color: var(--pink); }
 .mode-negatives-theme .chip.selected { background: var(--orange); border-color: var(--orange); }
 .mode-decimals-theme .chip.selected { background: var(--green); border-color: var(--green); }
 .mode-algebra-theme .chip.selected { background: var(--purple); border-color: var(--purple); }
@@ -170,6 +174,7 @@ html, body {
 }
 .start-btn:active { transform: scale(.98); }
 
+.mode-squares-theme .start-btn { background: linear-gradient(135deg, var(--pink), var(--pink-dark)); }
 .mode-negatives-theme .start-btn { background: linear-gradient(135deg, var(--orange), var(--orange-dark)); }
 .mode-decimals-theme .start-btn { background: linear-gradient(135deg, var(--green), var(--green-dark)); }
 .mode-algebra-theme .start-btn { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); }

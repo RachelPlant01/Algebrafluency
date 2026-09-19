@@ -13,6 +13,7 @@ const state = {
   current: null,        // {questionText, answer, options:[{label, correct}]}
   settings: {
     times: { tables: [] },
+    squares: { numbers: [] },
     negatives: { tables: [], level: 1 },
     decimals: { level: 1 },
     algebra: { level: 1, variables: ['x','y'] }
@@ -53,6 +54,10 @@ const SETTINGS_META = {
     title: 'Times Tables',
     themeClass: 'mode-times-theme'
   },
+  squares: {
+    title: 'Squares & Roots',
+    themeClass: 'mode-squares-theme'
+  },
   negatives: {
     title: 'Negative Numbers',
     themeClass: 'mode-negatives-theme'
@@ -77,6 +82,8 @@ function openSettings(mode) {
 
   if (mode === 'times') {
     body.appendChild(buildTimesSettings());
+  } else if (mode === 'squares') {
+    body.appendChild(buildSquaresSettings());
   } else if (mode === 'negatives') {
     body.appendChild(buildNegativesSettings());
   } else if (mode === 'decimals') {
@@ -119,6 +126,40 @@ function buildTimesSettings() {
   });
   wrap.appendChild(row);
   state.settings.times.tables = [];
+  return wrap;
+}
+
+function buildSquaresSettings() {
+  const wrap = document.createElement('div');
+  const label = document.createElement('p');
+  label.className = 'settings-label';
+  label.textContent = 'Which numbers?';
+  wrap.appendChild(label);
+
+  const hint = document.createElement('p');
+  hint.className = 'settings-hint';
+  hint.textContent = 'Tap the ones you want to practise. Leave none picked for a mix of all of them.';
+  wrap.appendChild(hint);
+
+  const row = document.createElement('div');
+  row.className = 'chip-row';
+  row.id = 'squares-chips';
+
+  const allNumbers = [1,2,3,4,5,6,7,8,9,10,11,12];
+  allNumbers.forEach(n => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = n + '²';
+    chip.dataset.number = n;
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('selected');
+      const selected = $$('#squares-chips .chip.selected').map(c => Number(c.dataset.number));
+      state.settings.squares.numbers = selected;
+    });
+    row.appendChild(chip);
+  });
+  wrap.appendChild(row);
+  state.settings.squares.numbers = [];
   return wrap;
 }
 
@@ -308,44 +349,11 @@ function multiplierPool(exclude) {
 
 function genTimesQuestion() {
   const tables = state.settings.times.tables.length ? state.settings.times.tables : [2,3,4,5,6,7,8,9,10,11,12];
-  const roll = Math.random();
-
-  if (roll < 0.15) {
-    // Square: n² — every option is a genuine square number (m² for m 1-12).
-    const n = pick(tables);
-    const answer = n * n;
-    const options = new Set([answer]);
-    for (const m of multiplierPool(n)) {
-      if (options.size >= 4) break;
-      options.add(m * m);
-    }
-    return {
-      questionText: `${n}²`,
-      answerLabel: String(answer),
-      options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === answer }))
-    };
-  }
-
-  if (roll < 0.3) {
-    // Square root: √(n²) = n — every option is a plausible root, 1-12.
-    const n = pick(tables);
-    const options = new Set([n]);
-    for (const m of multiplierPool(n)) {
-      if (options.size >= 4) break;
-      options.add(m);
-    }
-    return {
-      questionText: `√${n * n}`,
-      answerLabel: String(n),
-      options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === n }))
-    };
-  }
-
   const a = pick(tables);
   const b = randInt(1, 12);
   const product = a * b;
 
-  if (roll < 0.65) {
+  if (Math.random() < 0.5) {
     // Division: product ÷ table = multiplier — the exact inverse fact.
     const options = new Set([b]);
     for (const m of multiplierPool(b)) {
@@ -368,6 +376,39 @@ function genTimesQuestion() {
     questionText: `${a} × ${b}`,
     answerLabel: String(product),
     options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === product }))
+  };
+}
+
+/* ---- Squares & Roots ---- */
+function genSquaresQuestion() {
+  const numbers = state.settings.squares.numbers.length ? state.settings.squares.numbers : [1,2,3,4,5,6,7,8,9,10,11,12];
+  const n = pick(numbers);
+  const square = n * n;
+
+  if (Math.random() < 0.5) {
+    // Square root: √(n²) = n — every option is a plausible root, 1-12.
+    const options = new Set([n]);
+    for (const m of multiplierPool(n)) {
+      if (options.size >= 4) break;
+      options.add(m);
+    }
+    return {
+      questionText: `√${square}`,
+      answerLabel: String(n),
+      options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === n }))
+    };
+  }
+
+  // Square: n² — every option is a genuine square number (m² for m 1-12).
+  const options = new Set([square]);
+  for (const m of multiplierPool(n)) {
+    if (options.size >= 4) break;
+    options.add(m * m);
+  }
+  return {
+    questionText: `${n}²`,
+    answerLabel: String(square),
+    options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === square }))
   };
 }
 
@@ -641,6 +682,7 @@ function genAlgebraQuestion() {
 
 function generateQuestion() {
   if (state.mode === 'times') return genTimesQuestion();
+  if (state.mode === 'squares') return genSquaresQuestion();
   if (state.mode === 'negatives') return genNegativesQuestion();
   if (state.mode === 'decimals') return genDecimalsQuestion();
   if (state.mode === 'algebra') return genAlgebraQuestion();
