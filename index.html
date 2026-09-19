@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hit the Algebra Button</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- HOME / MODE SELECT -->
+  <section id="screen-home" class="screen active">
+    <h1 class="title">🎯 Hit the Algebra Button</h1>
+    <p class="subtitle">Choose a game to practise</p>
+
+    <div class="mode-grid">
+      <button class="mode-card mode-times" data-mode="times">
+        <span class="mode-emoji">✖️</span>
+        <span class="mode-name">Times Tables</span>
+        <span class="mode-desc">2× to 12× tables</span>
+      </button>
+
+      <button class="mode-card mode-decimals" data-mode="decimals">
+        <span class="mode-emoji">🔟</span>
+        <span class="mode-name">Multiples &amp; Decimals</span>
+        <span class="mode-desc">5 × 0.7&nbsp; &nbsp;40 × 80</span>
+      </button>
+
+      <button class="mode-card mode-algebra" data-mode="algebra">
+        <span class="mode-emoji">🔤</span>
+        <span class="mode-name">Algebra</span>
+        <span class="mode-desc">3x × 2x&nbsp; &nbsp;8y × 3</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="screen-settings" class="screen">
+    <button class="back-btn" id="settings-back">← Back</button>
+    <h2 id="settings-title" class="screen-title"></h2>
+
+    <div id="settings-body" class="settings-body"></div>
+
+    <div class="timer-choice">
+      <p class="settings-label">Round length</p>
+      <div class="chip-row" id="timer-chips">
+        <button class="chip" data-timer="30">30 sec</button>
+        <button class="chip selected" data-timer="60">60 sec</button>
+        <button class="chip" data-timer="120">2 min</button>
+        <button class="chip" data-timer="0">Practice</button>
+      </div>
+    </div>
+
+    <button id="start-btn" class="start-btn">Start ▶</button>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen">
+    <div class="game-hud">
+      <button class="quit-btn" id="quit-btn">✕</button>
+      <div class="hud-stat">Score <span id="hud-score">0</span></div>
+      <div class="hud-stat">Streak <span id="hud-streak">0</span></div>
+      <div class="hud-stat" id="hud-time-wrap">⏱ <span id="hud-time">60</span>s</div>
+    </div>
+    <div class="timer-bar-wrap"><div id="timer-bar" class="timer-bar"></div></div>
+
+    <div class="question-wrap">
+      <div id="question" class="question"></div>
+    </div>
+
+    <div id="answers" class="answers-grid"></div>
+
+    <div id="feedback-flash" class="feedback-flash"></div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="screen-results" class="screen">
+    <h2 class="screen-title">⏰ Time's up!</h2>
+    <div class="results-card">
+      <div class="result-row"><span>Score</span><strong id="res-score">0</strong></div>
+      <div class="result-row"><span>Best streak</span><strong id="res-streak">0</strong></div>
+      <div class="result-row"><span>Accuracy</span><strong id="res-accuracy">0%</strong></div>
+    </div>
+    <p id="res-message" class="res-message"></p>
+    <div class="results-actions">
+      <button id="play-again-btn" class="start-btn">Play again</button>
+      <button id="change-mode-btn" class="secondary-btn">Change game</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

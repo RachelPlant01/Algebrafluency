@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hit the Algebra Button</title>
+<style>
+:root {
+  --blue: #2f7ff2;
+  --blue-dark: #1c5fd1;
+  --green: #1fb373;
+  --green-dark: #128a58;
+  --purple: #8b5cf6;
+  --purple-dark: #6d3ff0;
+  --bg: #eef2fb;
+  --card: #ffffff;
+  --ink: #1b2340;
+  --muted: #6b7290;
+  --danger: #ef4444;
+  --ok: #22c55e;
+  font-size: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: linear-gradient(160deg, #eef2fb 0%, #e4ecff 100%);
+  font-family: 'Trebuchet MS', 'Segoe UI', Verdana, system-ui, sans-serif;
+  color: var(--ink);
+  overflow-x: hidden;
+}
+
+#app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen { display: none; flex: 1; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ---------- HOME ---------- */
+.title {
+  text-align: center;
+  font-size: 2.1rem;
+  font-weight: 800;
+  margin: 12px 0 4px;
+}
+.subtitle {
+  text-align: center;
+  color: var(--muted);
+  margin: 0 0 28px;
+  font-size: 1.05rem;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.mode-card {
+  border: none;
+  border-radius: 20px;
+  padding: 22px 20px;
+  color: white;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 10px 24px -8px rgba(20, 30, 70, 0.35);
+  transition: transform .12s ease, box-shadow .12s ease;
+  font-family: inherit;
+}
+.mode-card:hover { transform: translateY(-2px); }
+.mode-card:active { transform: translateY(1px) scale(.99); }
+
+.mode-times    { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); }
+.mode-decimals { background: linear-gradient(135deg, var(--green), var(--green-dark)); }
+.mode-algebra  { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); }
+
+.mode-emoji { font-size: 2rem; }
+.mode-name { font-size: 1.35rem; font-weight: 800; }
+.mode-desc { font-size: 0.95rem; opacity: 0.92; font-weight: 500; }
+
+/* ---------- SETTINGS ---------- */
+.back-btn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--blue-dark);
+  cursor: pointer;
+  padding: 6px 4px 18px;
+  font-weight: 700;
+}
+
+.screen-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 20px;
+}
+
+.settings-body { display: flex; flex-direction: column; gap: 22px; }
+
+.settings-label {
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--ink);
+}
+.settings-hint {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: -6px 0 10px;
+}
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.chip {
+  border: 2px solid #d7ddf0;
+  background: white;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all .1s ease;
+}
+.chip:hover { border-color: var(--blue); }
+.chip.selected {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: white;
+}
+.mode-decimals-theme .chip.selected { background: var(--green); border-color: var(--green); }
+.mode-algebra-theme .chip.selected { background: var(--purple); border-color: var(--purple); }
+
+.chip-desc {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.level-chip { text-align: left; max-width: 100%; }
+
+.timer-choice { margin-top: 26px; }
+
+.start-btn {
+  margin-top: 30px;
+  border: none;
+  border-radius: 16px;
+  padding: 16px;
+  font-family: inherit;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+  cursor: pointer;
+  box-shadow: 0 10px 20px -8px rgba(47,127,242,0.5);
+}
+.start-btn:active { transform: scale(.98); }
+
+.mode-decimals-theme .start-btn { background: linear-gradient(135deg, var(--green), var(--green-dark)); }
+.mode-algebra-theme .start-btn { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); }
+
+.secondary-btn {
+  margin-top: 12px;
+  border: 2px solid #d7ddf0;
+  background: white;
+  border-radius: 16px;
+  padding: 14px;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+/* ---------- GAME ---------- */
+.game-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.quit-btn {
+  border: none;
+  background: #dfe4f5;
+  color: var(--ink);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 800;
+}
+.hud-stat {
+  background: white;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 8px rgba(20,30,70,0.08);
+}
+.hud-stat span { color: var(--blue-dark); font-weight: 800; }
+
+.timer-bar-wrap {
+  height: 10px;
+  background: #dfe4f5;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+.timer-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--purple));
+  transition: width 1s linear;
+}
+
+.question-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+.question {
+  font-size: 3rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.answers-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.answer-btn {
+  border: none;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 6px 16px -6px rgba(20,30,70,0.25);
+  padding: 22px 10px;
+  font-family: inherit;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform .08s ease;
+}
+.answer-btn:active { transform: scale(.96); }
+.answer-btn.correct { background: var(--ok); color: white; }
+.answer-btn.wrong { background: var(--danger); color: white; }
+.answer-btn[disabled] { pointer-events: none; }
+
+.feedback-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+.feedback-flash.flash-correct { background: rgba(34,197,94,0.18); animation: flashOut .35s ease forwards; }
+.feedback-flash.flash-wrong { background: rgba(239,68,68,0.18); animation: flashOut .35s ease forwards; }
+@keyframes flashOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* ---------- RESULTS ---------- */
+.results-card {
+  background: white;
+  border-radius: 18px;
+  padding: 10px 20px;
+  box-shadow: 0 8px 20px -10px rgba(20,30,70,0.3);
+  margin-bottom: 6px;
+}
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid #eef1fb;
+  font-size: 1.05rem;
+}
+.result-row:last-child { border-bottom: none; }
+.result-row strong { font-size: 1.2rem; color: var(--blue-dark); }
+
+.res-message {
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+  margin: 18px 0 0;
+}
+
+.results-actions { display: flex; flex-direction: column; }
+
+@media (min-width: 640px) {
+  .mode-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .mode-card { text-align: center; align-items: center; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- HOME / MODE SELECT -->
+  <section id="screen-home" class="screen active">
+    <h1 class="title">🎯 Hit the Algebra Button</h1>
+    <p class="subtitle">Choose a game to practise</p>
+
+    <div class="mode-grid">
+      <button class="mode-card mode-times" data-mode="times">
+        <span class="mode-emoji">✖️</span>
+        <span class="mode-name">Times Tables</span>
+        <span class="mode-desc">2× to 12× tables</span>
+      </button>
+
+      <button class="mode-card mode-decimals" data-mode="decimals">
+        <span class="mode-emoji">🔟</span>
+        <span class="mode-name">Multiples &amp; Decimals</span>
+        <span class="mode-desc">5 × 0.7&nbsp; &nbsp;40 × 80</span>
+      </button>
+
+      <button class="mode-card mode-algebra" data-mode="algebra">
+        <span class="mode-emoji">🔤</span>
+        <span class="mode-name">Algebra</span>
+        <span class="mode-desc">3x × 2x&nbsp; &nbsp;8y × 3</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="screen-settings" class="screen">
+    <button class="back-btn" id="settings-back">← Back</button>
+    <h2 id="settings-title" class="screen-title"></h2>
+
+    <div id="settings-body" class="settings-body"></div>
+
+    <div class="timer-choice">
+      <p class="settings-label">Round length</p>
+      <div class="chip-row" id="timer-chips">
+        <button class="chip" data-timer="30">30 sec</button>
+        <button class="chip selected" data-timer="60">60 sec</button>
+        <button class="chip" data-timer="120">2 min</button>
+        <button class="chip" data-timer="0">Practice</button>
+      </div>
+    </div>
+
+    <button id="start-btn" class="start-btn">Start ▶</button>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen">
+    <div class="game-hud">
+      <button class="quit-btn" id="quit-btn">✕</button>
+      <div class="hud-stat">Score <span id="hud-score">0</span></div>
+      <div class="hud-stat">Streak <span id="hud-streak">0</span></div>
+      <div class="hud-stat" id="hud-time-wrap">⏱ <span id="hud-time">60</span>s</div>
+    </div>
+    <div class="timer-bar-wrap"><div id="timer-bar" class="timer-bar"></div></div>
+
+    <div class="question-wrap">
+      <div id="question" class="question"></div>
+    </div>
+
+    <div id="answers" class="answers-grid"></div>
+
+    <div id="feedback-flash" class="feedback-flash"></div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="screen-results" class="screen">
+    <h2 class="screen-title">⏰ Time's up!</h2>
+    <div class="results-card">
+      <div class="result-row"><span>Score</span><strong id="res-score">0</strong></div>
+      <div class="result-row"><span>Best streak</span><strong id="res-streak">0</strong></div>
+      <div class="result-row"><span>Accuracy</span><strong id="res-accuracy">0%</strong></div>
+    </div>
+    <p id="res-message" class="res-message"></p>
+    <div class="results-actions">
+      <button id="play-again-btn" class="start-btn">Play again</button>
+      <button id="change-mode-btn" class="secondary-btn">Change game</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ===================== Hit the Algebra Button ===================== */
+
+const state = {
+  mode: null,          // 'times' | 'decimals' | 'algebra'
+  timerLength: 60,
+  score: 0,
+  streak: 0,
+  bestStreak: 0,
+  correctCount: 0,
+  wrongCount: 0,
+  timeLeft: 60,
+  timerId: null,
+  current: null,        // {questionText, answer, options:[{label, correct}]}
+  settings: {
+    times: { tables: [2,3,4,5,6,7,8,9,10,11,12] },
+    decimals: { level: 1 },
+    algebra: { level: 1, variables: ['x','y'] }
+  }
+};
+
+/* ---------- helpers ---------- */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = randInt(0, i);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ===================== SCREEN NAVIGATION ===================== */
+function showScreen(id) {
+  $$('.screen').forEach(s => s.classList.remove('active'));
+  $('#' + id).classList.add('active');
+}
+
+/* ===================== HOME ===================== */
+$$('.mode-card').forEach(card => {
+  card.addEventListener('click', () => {
+    state.mode = card.dataset.mode;
+    openSettings(state.mode);
+  });
+});
+
+/* ===================== SETTINGS ===================== */
+const SETTINGS_META = {
+  times: {
+    title: 'Times Tables',
+    themeClass: 'mode-times-theme'
+  },
+  decimals: {
+    title: 'Multiples & Decimals',
+    themeClass: 'mode-decimals-theme'
+  },
+  algebra: {
+    title: 'Algebra',
+    themeClass: 'mode-algebra-theme'
+  }
+};
+
+function openSettings(mode) {
+  const meta = SETTINGS_META[mode];
+  $('#settings-title').textContent = meta.title;
+  const body = $('#settings-body');
+  body.innerHTML = '';
+  document.body.className = '';
+  document.body.classList.add(meta.themeClass);
+
+  if (mode === 'times') {
+    body.appendChild(buildTimesSettings());
+  } else if (mode === 'decimals') {
+    body.appendChild(buildDecimalsSettings());
+  } else if (mode === 'algebra') {
+    body.appendChild(buildAlgebraSettings());
+  }
+
+  showScreen('screen-settings');
+}
+
+function buildTimesSettings() {
+  const wrap = document.createElement('div');
+  const label = document.createElement('p');
+  label.className = 'settings-label';
+  label.textContent = 'Which tables?';
+  wrap.appendChild(label);
+
+  const row = document.createElement('div');
+  row.className = 'chip-row';
+  row.id = 'times-chips';
+
+  const allTables = [2,3,4,5,6,7,8,9,10,11,12];
+  allTables.forEach(t => {
+    const chip = document.createElement('button');
+    chip.className = 'chip selected';
+    chip.textContent = t + '×';
+    chip.dataset.table = t;
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('selected');
+      const selected = $$('#times-chips .chip.selected').map(c => Number(c.dataset.table));
+      state.settings.times.tables = selected.length ? selected : allTables;
+    });
+    row.appendChild(chip);
+  });
+  wrap.appendChild(row);
+  state.settings.times.tables = allTables.slice();
+  return wrap;
+}
+
+function buildDecimalsSettings() {
+  const wrap = document.createElement('div');
+  const label = document.createElement('p');
+  label.className = 'settings-label';
+  label.textContent = 'Difficulty';
+  wrap.appendChild(label);
+
+  const row = document.createElement('div');
+  row.className = 'chip-row';
+  row.id = 'decimals-level-chips';
+
+  const levels = [
+    { level: 1, title: 'Level 1 — Multiples of 10', desc: 'e.g. 5 × 0.7, 40 × 80, 30 × 6' },
+    { level: 2, title: 'Level 2 — Multiples of 100', desc: 'e.g. 300 × 0.2, 40 × 0.03' },
+    { level: 3, title: 'Level 3 — Decimal × Decimal', desc: 'e.g. 0.3 × 0.4, 0.02 × 0.6' }
+  ];
+
+  levels.forEach((l, i) => {
+    const chip = document.createElement('button');
+    chip.className = 'chip level-chip' + (i === 0 ? ' selected' : '');
+    chip.dataset.level = l.level;
+    chip.innerHTML = `${l.title}<span class="chip-desc">${l.desc}</span>`;
+    chip.addEventListener('click', () => {
+      $$('#decimals-level-chips .chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      state.settings.decimals.level = l.level;
+    });
+    row.appendChild(chip);
+  });
+  wrap.appendChild(row);
+  state.settings.decimals.level = 1;
+  return wrap;
+}
+
+function buildAlgebraSettings() {
+  const wrap = document.createElement('div');
+
+  const varLabel = document.createElement('p');
+  varLabel.className = 'settings-label';
+  varLabel.textContent = 'Letters';
+  wrap.appendChild(varLabel);
+
+  const varRow = document.createElement('div');
+  varRow.className = 'chip-row';
+  varRow.id = 'algebra-var-chips';
+  const varOptions = [
+    { key: 'x', label: 'x only' },
+    { key: 'y', label: 'y only' },
+    { key: 'mixed', label: 'x and y' }
+  ];
+  varOptions.forEach((opt, i) => {
+    const chip = document.createElement('button');
+    chip.className = 'chip' + (i === 2 ? ' selected' : '');
+    chip.textContent = opt.label;
+    chip.dataset.key = opt.key;
+    chip.addEventListener('click', () => {
+      $$('#algebra-var-chips .chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      state.settings.algebra.variables = opt.key === 'mixed' ? ['x','y'] : [opt.key];
+    });
+    varRow.appendChild(chip);
+  });
+  wrap.appendChild(varRow);
+  state.settings.algebra.variables = ['x','y'];
+
+  const levelLabel = document.createElement('p');
+  levelLabel.className = 'settings-label';
+  levelLabel.style.marginTop = '18px';
+  levelLabel.textContent = 'Difficulty';
+  wrap.appendChild(levelLabel);
+
+  const levelRow = document.createElement('div');
+  levelRow.className = 'chip-row';
+  levelRow.id = 'algebra-level-chips';
+  const levels = [
+    { level: 1, title: 'Level 1 — Coefficient × term', desc: 'e.g. 8y × 3, 5x × 4' },
+    { level: 2, title: 'Level 2 — Term × term', desc: 'e.g. 3x × 2x, 4y × 2y' },
+    { level: 3, title: 'Level 3 — Mixed & harder', desc: 'negatives, x² × x, bigger numbers' }
+  ];
+  levels.forEach((l, i) => {
+    const chip = document.createElement('button');
+    chip.className = 'chip level-chip' + (i === 0 ? ' selected' : '');
+    chip.dataset.level = l.level;
+    chip.innerHTML = `${l.title}<span class="chip-desc">${l.desc}</span>`;
+    chip.addEventListener('click', () => {
+      $$('#algebra-level-chips .chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      state.settings.algebra.level = l.level;
+    });
+    levelRow.appendChild(chip);
+  });
+  wrap.appendChild(levelRow);
+  state.settings.algebra.level = 1;
+
+  return wrap;
+}
+
+$('#settings-back').addEventListener('click', () => showScreen('screen-home'));
+
+$$('#timer-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    $$('#timer-chips .chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+    state.timerLength = Number(chip.dataset.timer);
+  });
+});
+
+$('#start-btn').addEventListener('click', startGame);
+
+/* ===================== QUESTION GENERATORS ===================== */
+
+/* ---- Times tables ---- */
+function genTimesQuestion() {
+  const tables = state.settings.times.tables.length ? state.settings.times.tables : [2,3,4,5,6,7,8,9,10,11,12];
+  const a = pick(tables);
+  const b = randInt(1, 12);
+  const answer = a * b;
+  const options = new Set([answer]);
+  const strategies = [
+    () => a * (b + pick([-1,1])),
+    () => (a + pick([-1,1])) * b,
+    () => answer + pick([-10,-2,-1,1,2,10]),
+    () => pick(tables) * randInt(1,12)
+  ];
+  let guard = 0;
+  while (options.size < 4 && guard < 30) {
+    guard++;
+    const val = pick(strategies)();
+    if (val > 0 && val !== answer) options.add(val);
+  }
+  return {
+    questionText: `${a} × ${b}`,
+    answerLabel: String(answer),
+    options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === answer }))
+  };
+}
+
+/* ---- Multiples & Decimals ---- */
+// A factor is {digit (1-9), scale (power of ten)}
+function makeFactor(kind) {
+  const digit = randInt(1, 9);
+  const scaleMap = { unit: 0, ten: 1, hundred: 2, tenth: -1, hundredth: -2 };
+  return { digit, scale: scaleMap[kind], kind };
+}
+
+function factorDisplay(f) {
+  if (f.scale >= 0) return String(f.digit * Math.pow(10, f.scale));
+  const shift = -f.scale;
+  return '0.' + '0'.repeat(shift - 1) + f.digit;
+}
+
+function coreScaleToDecimalString(core, totalScale) {
+  if (totalScale >= 0) return String(core * Math.pow(10, totalScale));
+  const shift = -totalScale;
+  let s = String(core).padStart(shift + 1, '0');
+  let intPart = s.slice(0, s.length - shift);
+  let fracPart = s.slice(s.length - shift);
+  fracPart = fracPart.replace(/0+$/, '');
+  if (fracPart === '') return intPart;
+  return intPart + '.' + fracPart;
+}
+
+const DECIMAL_TEMPLATES = {
+  1: [['unit','tenth'], ['ten','ten'], ['ten','unit']],
+  2: [['hundred','tenth'], ['ten','hundredth'], ['hundred','hundred'], ['unit','hundredth']],
+  3: [['tenth','tenth'], ['hundredth','tenth'], ['hundred','unit']]
+};
+
+function decimalsPoolForLevel(level) {
+  let pool = DECIMAL_TEMPLATES[1].slice();
+  if (level >= 2) pool = pool.concat(DECIMAL_TEMPLATES[2]);
+  if (level >= 3) pool = pool.concat(DECIMAL_TEMPLATES[3]);
+  return pool;
+}
+
+function genDecimalsQuestion() {
+  const level = state.settings.decimals.level || 1;
+  const pool = decimalsPoolForLevel(level);
+  const [kindA, kindB] = pick(pool);
+  const fa = makeFactor(kindA);
+  const fb = makeFactor(kindB);
+  const core = fa.digit * fb.digit;
+  const totalScale = fa.scale + fb.scale;
+  const answer = coreScaleToDecimalString(core, totalScale);
+
+  const optionSet = new Set([answer]);
+  const variantMakers = [
+    () => coreScaleToDecimalString(core, totalScale + 1),
+    () => coreScaleToDecimalString(core, totalScale - 1),
+    () => coreScaleToDecimalString(Math.max(1, core + pick([-1,1,2,-2])), totalScale),
+    () => coreScaleToDecimalString(fa.digit === fb.digit ? core : (fa.digit + 1) * fb.digit, totalScale),
+    () => coreScaleToDecimalString(core, totalScale + pick([-2,2]))
+  ];
+  let guard = 0;
+  while (optionSet.size < 4 && guard < 40) {
+    guard++;
+    const val = pick(variantMakers)();
+    if (val !== answer && Number(val) > 0) optionSet.add(val);
+  }
+
+  return {
+    questionText: `${factorDisplay(fa)} × ${factorDisplay(fb)}`,
+    answerLabel: answer,
+    options: shuffle(Array.from(optionSet)).map(v => ({ label: v, correct: v === answer }))
+  };
+}
+
+/* ---- Algebra ---- */
+const SUPERSCRIPT = { 1: '', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶' };
+
+function formatTerm(coef, letter, exp) {
+  if (!letter || exp === 0) return String(coef);
+  let coefPart;
+  if (coef === 1) coefPart = '';
+  else if (coef === -1) coefPart = '-';
+  else coefPart = String(coef);
+  const expPart = SUPERSCRIPT[exp] !== undefined ? SUPERSCRIPT[exp] : ('^' + exp);
+  return `${coefPart}${letter}${expPart}`;
+}
+
+function randomTerm({ letter, allowNegative, maxCoef, exp }) {
+  let coef = randInt(2, maxCoef);
+  if (allowNegative && Math.random() < 0.35) coef = -coef;
+  return { coef, letter, exp };
+}
+
+function multiplyTerms(t1, t2) {
+  const coef = t1.coef * t2.coef;
+  if (t1.letter && t2.letter && t1.letter === t2.letter) {
+    return { coef, letter: t1.letter, exp: t1.exp + t2.exp };
+  }
+  if (t1.letter && !t2.letter) return { coef, letter: t1.letter, exp: t1.exp };
+  if (!t1.letter && t2.letter) return { coef, letter: t2.letter, exp: t2.exp };
+  return { coef, letter: null, exp: 0 };
+}
+
+function genAlgebraQuestion() {
+  const level = state.settings.algebra.level || 1;
+  const vars = state.settings.algebra.variables.length ? state.settings.algebra.variables : ['x','y'];
+  const letter = pick(vars);
+  const allowNegative = level >= 3;
+  const maxCoef = level >= 3 ? 12 : (level === 2 ? 9 : 9);
+
+  let t1, t2;
+  if (level === 1) {
+    t1 = randomTerm({ letter, allowNegative: false, maxCoef, exp: 1 });
+    t2 = { coef: randInt(2, maxCoef), letter: null, exp: 0 };
+    if (Math.random() < 0.5) [t1, t2] = [t2, t1];
+  } else if (level === 2) {
+    t1 = randomTerm({ letter, allowNegative: false, maxCoef, exp: 1 });
+    t2 = randomTerm({ letter, allowNegative: false, maxCoef, exp: 1 });
+  } else {
+    const pattern = pick(['termTerm', 'squareTerm', 'coefTerm', 'negTerm']);
+    if (pattern === 'termTerm') {
+      t1 = randomTerm({ letter, allowNegative, maxCoef, exp: 1 });
+      t2 = randomTerm({ letter, allowNegative, maxCoef, exp: 1 });
+    } else if (pattern === 'squareTerm') {
+      t1 = { coef: randInt(2, maxCoef), letter, exp: 2 };
+      t2 = randomTerm({ letter, allowNegative, maxCoef, exp: 1 });
+    } else if (pattern === 'coefTerm') {
+      t1 = randomTerm({ letter, allowNegative, maxCoef, exp: 1 });
+      t2 = { coef: randInt(2, maxCoef), letter: null, exp: 0 };
+    } else {
+      t1 = randomTerm({ letter, allowNegative: true, maxCoef, exp: 1 });
+      t2 = randomTerm({ letter, allowNegative: true, maxCoef, exp: 1 });
+    }
+  }
+
+  const result = multiplyTerms(t1, t2);
+  const answer = formatTerm(result.coef, result.letter, result.exp);
+  const questionText = `${formatTerm(t1.coef, t1.letter, t1.exp)} × ${formatTerm(t2.coef, t2.letter, t2.exp)}`;
+
+  const variants = new Set([answer]);
+  const variantMakers = [
+    () => formatTerm(result.coef, result.letter, 1),                       // forgot to add exponents
+    () => formatTerm(t1.coef + t2.coef, result.letter, result.exp),        // added coefficients instead of multiplying
+    () => formatTerm(result.coef, result.letter, result.exp + 1),          // exponent off by one
+    () => formatTerm(result.coef + pick([-2,-1,1,2]), result.letter, result.exp),
+    () => formatTerm(-result.coef, result.letter, result.exp)              // sign slip
+  ];
+  let guard = 0;
+  while (variants.size < 4 && guard < 40) {
+    guard++;
+    const val = pick(variantMakers)();
+    if (val !== answer && val !== '0' && val !== '-0') variants.add(val);
+  }
+
+  return {
+    questionText,
+    answerLabel: answer,
+    options: shuffle(Array.from(variants)).map(v => ({ label: v, correct: v === answer }))
+  };
+}
+
+function generateQuestion() {
+  if (state.mode === 'times') return genTimesQuestion();
+  if (state.mode === 'decimals') return genDecimalsQuestion();
+  if (state.mode === 'algebra') return genAlgebraQuestion();
+}
+
+/* ===================== GAME LOOP ===================== */
+function startGame() {
+  state.score = 0;
+  state.streak = 0;
+  state.bestStreak = 0;
+  state.correctCount = 0;
+  state.wrongCount = 0;
+  state.timeLeft = state.timerLength;
+
+  const themeClass = SETTINGS_META[state.mode].themeClass;
+  document.body.className = '';
+  document.body.classList.add(themeClass);
+
+  $('#hud-score').textContent = '0';
+  $('#hud-streak').textContent = '0';
+  $('#hud-time-wrap').style.display = state.timerLength > 0 ? 'block' : 'none';
+  $('#hud-time').textContent = state.timeLeft;
+  $('#timer-bar').style.width = '100%';
+  $('.timer-bar-wrap').style.display = state.timerLength > 0 ? 'block' : 'none';
+
+  showScreen('screen-game');
+  nextQuestion();
+
+  clearInterval(state.timerId);
+  if (state.timerLength > 0) {
+    state.timerId = setInterval(tick, 1000);
+  }
+}
+
+function tick() {
+  state.timeLeft--;
+  $('#hud-time').textContent = Math.max(0, state.timeLeft);
+  $('#timer-bar').style.width = Math.max(0, (state.timeLeft / state.timerLength) * 100) + '%';
+  if (state.timeLeft <= 0) {
+    endGame();
+  }
+}
+
+function nextQuestion() {
+  state.current = generateQuestion();
+  $('#question').textContent = state.current.questionText;
+  const answersWrap = $('#answers');
+  answersWrap.innerHTML = '';
+  state.current.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = opt.label;
+    btn.addEventListener('click', () => handleAnswer(btn, opt.correct));
+    answersWrap.appendChild(btn);
+  });
+}
+
+function handleAnswer(btn, correct) {
+  $$('.answer-btn').forEach(b => b.disabled = true);
+  const flash = $('#feedback-flash');
+
+  if (correct) {
+    btn.classList.add('correct');
+    state.score++;
+    state.streak++;
+    state.correctCount++;
+    state.bestStreak = Math.max(state.bestStreak, state.streak);
+    flash.className = 'feedback-flash flash-correct';
+  } else {
+    btn.classList.add('wrong');
+    state.streak = 0;
+    state.wrongCount++;
+    flash.className = 'feedback-flash flash-wrong';
+    $$('.answer-btn').forEach(b => {
+      if (b.textContent === state.current.answerLabel) b.classList.add('correct');
+    });
+  }
+  requestAnimationFrame(() => { flash.className = 'feedback-flash'; });
+
+  $('#hud-score').textContent = state.score;
+  $('#hud-streak').textContent = state.streak;
+
+  setTimeout(() => {
+    if (state.timerLength === 0 || state.timeLeft > 0) {
+      nextQuestion();
+    }
+  }, 450);
+}
+
+$('#quit-btn').addEventListener('click', () => {
+  clearInterval(state.timerId);
+  showScreen('screen-home');
+});
+
+/* ===================== RESULTS ===================== */
+function endGame() {
+  clearInterval(state.timerId);
+  const total = state.correctCount + state.wrongCount;
+  const accuracy = total ? Math.round((state.correctCount / total) * 100) : 0;
+
+  $('#res-score').textContent = state.score;
+  $('#res-streak').textContent = state.bestStreak;
+  $('#res-accuracy').textContent = accuracy + '%';
+
+  let msg = 'Keep practising!';
+  if (accuracy >= 90) msg = 'Amazing work! 🌟';
+  else if (accuracy >= 70) msg = 'Great job! 👏';
+  else if (accuracy >= 50) msg = 'Good effort — try again! 💪';
+
+  $('#res-message').textContent = msg;
+  showScreen('screen-results');
+}
+
+$('#play-again-btn').addEventListener('click', startGame);
+$('#change-mode-btn').addEventListener('click', () => showScreen('screen-home'));
+
+/* ===================== KEYBOARD SHORTCUTS ===================== */
+document.addEventListener('keydown', (e) => {
+  if (!$('#screen-game').classList.contains('active')) return;
+  const idx = Number(e.key) - 1;
+  const buttons = $$('.answer-btn');
+  if (idx >= 0 && idx < buttons.length && !buttons[idx].disabled) {
+    buttons[idx].click();
+  }
+});
+</script>
+</body>
+</html>
