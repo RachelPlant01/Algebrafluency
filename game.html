@@ -379,7 +379,7 @@ html, body {
       <button class="mode-card mode-squares" data-mode="squares">
         <span class="mode-emoji">√</span>
         <span class="mode-name">Squares &amp; Roots</span>
-        <span class="mode-desc">4² = 16&nbsp; &nbsp;√81 = 9</span>
+        <span class="mode-desc">Squares &amp; roots up to 15²</span>
       </button>
 
       <button class="mode-card mode-negatives" data-mode="negatives">
@@ -491,7 +491,7 @@ const state = {
   current: null,        // {questionText, answer, options:[{label, correct}]}
   settings: {
     times: { tables: [] },
-    squares: { numbers: [] },
+    squares: { type: 'mix' },
     negatives: { tables: [], level: 1 },
     decimals: { level: 1 },
     algebra: { level: 1, variables: ['x','y'] }
@@ -611,33 +611,32 @@ function buildSquaresSettings() {
   const wrap = document.createElement('div');
   const label = document.createElement('p');
   label.className = 'settings-label';
-  label.textContent = 'Which numbers?';
+  label.textContent = 'Question type';
   wrap.appendChild(label);
-
-  const hint = document.createElement('p');
-  hint.className = 'settings-hint';
-  hint.textContent = 'Tap the ones you want to practise. Leave none picked for a mix of all of them.';
-  wrap.appendChild(hint);
 
   const row = document.createElement('div');
   row.className = 'chip-row';
-  row.id = 'squares-chips';
+  row.id = 'squares-type-chips';
 
-  const allNumbers = [1,2,3,4,5,6,7,8,9,10,11,12];
-  allNumbers.forEach(n => {
+  const types = [
+    { key: 'mix', title: 'Mix of both', desc: 'e.g. 4² = 16 and √81 = 9, up to 15² / √225' },
+    { key: 'square', title: 'Squares only', desc: 'e.g. 4² = 16, up to 15² = 225' },
+    { key: 'root', title: 'Square roots only', desc: 'e.g. √81 = 9, up to √225 = 15' }
+  ];
+  types.forEach((t, i) => {
     const chip = document.createElement('button');
-    chip.className = 'chip';
-    chip.textContent = n + '²';
-    chip.dataset.number = n;
+    chip.className = 'chip level-chip' + (i === 0 ? ' selected' : '');
+    chip.dataset.type = t.key;
+    chip.innerHTML = `${t.title}<span class="chip-desc">${t.desc}</span>`;
     chip.addEventListener('click', () => {
-      chip.classList.toggle('selected');
-      const selected = $$('#squares-chips .chip.selected').map(c => Number(c.dataset.number));
-      state.settings.squares.numbers = selected;
+      $$('#squares-type-chips .chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      state.settings.squares.type = t.key;
     });
     row.appendChild(chip);
   });
   wrap.appendChild(row);
-  state.settings.squares.numbers = [];
+  state.settings.squares.type = 'mix';
   return wrap;
 }
 
@@ -819,9 +818,10 @@ $('#start-btn').addEventListener('click', startGame);
 // Builds a shuffled list of multipliers (1-12, excluding `exclude`) with the
 // closest ones to `exclude` first, so distractors are plausible but every
 // option is still a genuine multiple of the table being practised.
-function multiplierPool(exclude) {
-  const near = [exclude-1, exclude+1, exclude-2, exclude+2].filter(m => m >= 1 && m <= 12 && m !== exclude);
-  const others = [1,2,3,4,5,6,7,8,9,10,11,12].filter(m => m !== exclude && !near.includes(m));
+function multiplierPool(exclude, max = 12) {
+  const near = [exclude-1, exclude+1, exclude-2, exclude+2].filter(m => m >= 1 && m <= max && m !== exclude);
+  const all = Array.from({ length: max }, (_, i) => i + 1);
+  const others = all.filter(m => m !== exclude && !near.includes(m));
   return shuffle(near).concat(shuffle(others));
 }
 
@@ -858,15 +858,18 @@ function genTimesQuestion() {
 }
 
 /* ---- Squares & Roots ---- */
-function genSquaresQuestion() {
-  const numbers = state.settings.squares.numbers.length ? state.settings.squares.numbers : [1,2,3,4,5,6,7,8,9,10,11,12];
-  const n = pick(numbers);
-  const square = n * n;
+const SQUARES_MAX = 15;
 
-  if (Math.random() < 0.5) {
-    // Square root: √(n²) = n — every option is a plausible root, 1-12.
+function genSquaresQuestion() {
+  const type = state.settings.squares.type || 'mix';
+  const n = randInt(1, SQUARES_MAX);
+  const square = n * n;
+  const isRoot = type === 'root' ? true : type === 'square' ? false : Math.random() < 0.5;
+
+  if (isRoot) {
+    // Square root: √(n²) = n — every option is a plausible root, 1-15.
     const options = new Set([n]);
-    for (const m of multiplierPool(n)) {
+    for (const m of multiplierPool(n, SQUARES_MAX)) {
       if (options.size >= 4) break;
       options.add(m);
     }
@@ -877,9 +880,9 @@ function genSquaresQuestion() {
     };
   }
 
-  // Square: n² — every option is a genuine square number (m² for m 1-12).
+  // Square: n² — every option is a genuine square number (m² for m 1-15).
   const options = new Set([square]);
-  for (const m of multiplierPool(n)) {
+  for (const m of multiplierPool(n, SQUARES_MAX)) {
     if (options.size >= 4) break;
     options.add(m * m);
   }
