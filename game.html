@@ -368,7 +368,7 @@ html, body {
       <button class="mode-card mode-times" data-mode="times">
         <span class="mode-emoji">✖️</span>
         <span class="mode-name">Times Tables</span>
-        <span class="mode-desc">2× to 12× — × and ÷</span>
+        <span class="mode-desc">×, ÷, squares &amp; roots</span>
       </button>
 
       <button class="mode-card mode-negatives" data-mode="negatives">
@@ -775,11 +775,44 @@ function multiplierPool(exclude) {
 
 function genTimesQuestion() {
   const tables = state.settings.times.tables.length ? state.settings.times.tables : [2,3,4,5,6,7,8,9,10,11,12];
+  const roll = Math.random();
+
+  if (roll < 0.15) {
+    // Square: n² — every option is a genuine square number (m² for m 1-12).
+    const n = pick(tables);
+    const answer = n * n;
+    const options = new Set([answer]);
+    for (const m of multiplierPool(n)) {
+      if (options.size >= 4) break;
+      options.add(m * m);
+    }
+    return {
+      questionText: `${n}²`,
+      answerLabel: String(answer),
+      options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === answer }))
+    };
+  }
+
+  if (roll < 0.3) {
+    // Square root: √(n²) = n — every option is a plausible root, 1-12.
+    const n = pick(tables);
+    const options = new Set([n]);
+    for (const m of multiplierPool(n)) {
+      if (options.size >= 4) break;
+      options.add(m);
+    }
+    return {
+      questionText: `√${n * n}`,
+      answerLabel: String(n),
+      options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === n }))
+    };
+  }
+
   const a = pick(tables);
   const b = randInt(1, 12);
   const product = a * b;
 
-  if (Math.random() < 0.5) {
+  if (roll < 0.65) {
     // Division: product ÷ table = multiplier — the exact inverse fact.
     const options = new Set([b]);
     for (const m of multiplierPool(b)) {
