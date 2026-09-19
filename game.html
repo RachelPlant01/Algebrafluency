@@ -379,7 +379,7 @@ html, body {
       <button class="mode-card mode-squares" data-mode="squares">
         <span class="mode-emoji">√</span>
         <span class="mode-name">Squares &amp; Roots</span>
-        <span class="mode-desc">Squares &amp; roots up to 15²</span>
+        <span class="mode-desc">whole, ten, decimal &amp; (-n)²</span>
       </button>
 
       <button class="mode-card mode-negatives" data-mode="negatives">
@@ -619,9 +619,9 @@ function buildSquaresSettings() {
   row.id = 'squares-type-chips';
 
   const types = [
-    { key: 'mix', title: 'Mix of both', desc: 'e.g. 4² = 16 and √81 = 9, up to 15² / √225' },
-    { key: 'square', title: 'Squares only', desc: 'e.g. 4² = 16, up to 15² = 225' },
-    { key: 'root', title: 'Square roots only', desc: 'e.g. √81 = 9, up to √225 = 15' }
+    { key: 'mix', title: 'Mix of both', desc: 'e.g. 4² = 16, 50² = 2500, (-6)² = 36, √0.36 = 0.6' },
+    { key: 'square', title: 'Squares only', desc: 'e.g. 7² = 49, 50² = 2500, (-3)² = 9, 0.6² = 0.36' },
+    { key: 'root', title: 'Square roots only', desc: 'e.g. √49 = 7, √2500 = 50, √0.36 = 0.6' }
   ];
   types.forEach((t, i) => {
     const chip = document.createElement('button');
@@ -858,38 +858,56 @@ function genTimesQuestion() {
 }
 
 /* ---- Squares & Roots ---- */
-const SQUARES_MAX = 15;
+const SQUARES_UNIT_MAX = 15;   // whole numbers 1-15
+const SQUARES_SCALED_MAX = 9;  // magnitude 1-9 for the ×10 and ÷10 categories
+
+// Picks the number to square: mostly a whole number 1-15, sometimes a
+// multiple of ten (10-90) or a tenth (0.1-0.9). {mag, scale, max} matches
+// the {digit, scale} shape factorDisplay/coreScaleToDecimalString expect
+// (value = mag × 10^scale), so those helpers work unchanged here.
+function pickSquareBase() {
+  const roll = Math.random();
+  if (roll < 0.55) return { mag: randInt(1, SQUARES_UNIT_MAX), scale: 0, max: SQUARES_UNIT_MAX };
+  if (roll < 0.775) return { mag: randInt(1, SQUARES_SCALED_MAX), scale: 1, max: SQUARES_SCALED_MAX };
+  return { mag: randInt(1, SQUARES_SCALED_MAX), scale: -1, max: SQUARES_SCALED_MAX };
+}
 
 function genSquaresQuestion() {
   const type = state.settings.squares.type || 'mix';
-  const n = randInt(1, SQUARES_MAX);
-  const square = n * n;
   const isRoot = type === 'root' ? true : type === 'square' ? false : Math.random() < 0.5;
+  const base = pickSquareBase();
+  const baseDisplay = factorDisplay({ digit: base.mag, scale: base.scale });
+  const squareStr = coreScaleToDecimalString(base.mag * base.mag, base.scale * 2);
 
   if (isRoot) {
-    // Square root: √(n²) = n — every option is a plausible root, 1-15.
-    const options = new Set([n]);
-    for (const m of multiplierPool(n, SQUARES_MAX)) {
+    // Square root: always the principal (positive) root — no negative bases here.
+    const options = new Set([baseDisplay]);
+    for (const m of multiplierPool(base.mag, base.max)) {
       if (options.size >= 4) break;
-      options.add(m);
+      options.add(factorDisplay({ digit: m, scale: base.scale }));
     }
     return {
-      questionText: `√${square}`,
-      answerLabel: String(n),
-      options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === n }))
+      questionText: `√${squareStr}`,
+      answerLabel: baseDisplay,
+      options: shuffle(Array.from(options)).map(v => ({ label: v, correct: v === baseDisplay }))
     };
   }
 
-  // Square: n² — every option is a genuine square number (m² for m 1-15).
-  const options = new Set([square]);
-  for (const m of multiplierPool(n, SQUARES_MAX)) {
+  // Square: sometimes a negative base, shown in brackets — e.g. (-7)² = 49.
+  const isNegative = Math.random() < 0.35;
+  const questionText = `${isNegative ? `(-${baseDisplay})` : baseDisplay}²`;
+
+  const options = new Set([squareStr]);
+  if (isNegative) options.add('-' + squareStr); // classic mistake: forgetting a negative squared is positive
+  for (const m of multiplierPool(base.mag, base.max)) {
     if (options.size >= 4) break;
-    options.add(m * m);
+    options.add(coreScaleToDecimalString(m * m, base.scale * 2));
   }
+
   return {
-    questionText: `${n}²`,
-    answerLabel: String(square),
-    options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === square }))
+    questionText,
+    answerLabel: squareStr,
+    options: shuffle(Array.from(options)).map(v => ({ label: v, correct: v === squareStr }))
   };
 }
 
