@@ -433,7 +433,7 @@ function formatTerm(coef, letter, exp) {
   else if (coef === -1) coefPart = '-';
   else coefPart = String(coef);
   const expPart = SUPERSCRIPT[exp] !== undefined ? SUPERSCRIPT[exp] : ('^' + exp);
-  return `${coefPart}${letter}${expPart}`;
+  return `${coefPart}<em class="var-letter">${letter}</em>${expPart}`;
 }
 
 function randomTerm({ letter, allowNegative, maxCoef, exp }) {
@@ -559,13 +559,14 @@ function tick() {
 
 function nextQuestion() {
   state.current = generateQuestion();
-  $('#question').textContent = state.current.questionText;
+  $('#question').innerHTML = state.current.questionText;
   const answersWrap = $('#answers');
   answersWrap.innerHTML = '';
   state.current.options.forEach(opt => {
     const btn = document.createElement('button');
     btn.className = 'answer-btn';
-    btn.textContent = opt.label;
+    btn.innerHTML = opt.label;
+    btn.dataset.correct = opt.correct ? 'true' : 'false';
     btn.addEventListener('click', () => handleAnswer(btn, opt.correct));
     answersWrap.appendChild(btn);
   });
@@ -588,7 +589,7 @@ function handleAnswer(btn, correct) {
     state.wrongCount++;
     flash.className = 'feedback-flash flash-wrong';
     $$('.answer-btn').forEach(b => {
-      if (b.textContent === state.current.answerLabel) b.classList.add('correct');
+      if (b.dataset.correct === 'true') b.classList.add('correct');
     });
   }
   requestAnimationFrame(() => { flash.className = 'feedback-flash'; });

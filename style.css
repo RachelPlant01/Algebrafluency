@@ -275,6 +275,11 @@ html, body {
   line-height: 1.15;
 }
 
+.var-letter {
+  font-style: italic;
+  font-family: 'Georgia', 'Times New Roman', serif;
+}
+
 .answers-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
