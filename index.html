@@ -22,6 +22,12 @@
         <span class="mode-desc">2× to 12× tables</span>
       </button>
 
+      <button class="mode-card mode-negatives" data-mode="negatives">
+        <span class="mode-emoji">➖</span>
+        <span class="mode-name">Negative Numbers</span>
+        <span class="mode-desc">-6 × 7&nbsp; &nbsp;-4 × -9</span>
+      </button>
+
       <button class="mode-card mode-decimals" data-mode="decimals">
         <span class="mode-emoji">🔟</span>
         <span class="mode-name">Multiples &amp; Decimals</span>
@@ -65,6 +71,23 @@
       <div class="hud-stat" id="hud-time-wrap">⏱ <span id="hud-time">60</span>s</div>
     </div>
     <div class="timer-bar-wrap"><div id="timer-bar" class="timer-bar"></div></div>
+
+    <div id="sign-hint" class="sign-hint">
+      <div class="sign-hint-row same">
+        <span class="sign-hint-label">Same signs → +</span>
+        <span class="sign-hint-eq">+ × + = +</span>
+        <span class="sign-hint-eq">− × − = +</span>
+        <span class="sign-hint-eq">+ ÷ + = +</span>
+        <span class="sign-hint-eq">− ÷ − = +</span>
+      </div>
+      <div class="sign-hint-row diff">
+        <span class="sign-hint-label">Different signs → −</span>
+        <span class="sign-hint-eq">+ × − = −</span>
+        <span class="sign-hint-eq">− × + = −</span>
+        <span class="sign-hint-eq">+ ÷ − = −</span>
+        <span class="sign-hint-eq">− ÷ + = −</span>
+      </div>
+    </div>
 
     <div class="question-wrap">
       <div id="question" class="question"></div>

@@ -5,6 +5,8 @@
   --green-dark: #128a58;
   --purple: #8b5cf6;
   --purple-dark: #6d3ff0;
+  --orange: #f2732f;
+  --orange-dark: #d1571c;
   --bg: #eef2fb;
   --card: #ffffff;
   --ink: #1b2340;
@@ -75,9 +77,10 @@ html, body {
 .mode-card:hover { transform: translateY(-2px); }
 .mode-card:active { transform: translateY(1px) scale(.99); }
 
-.mode-times    { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); }
-.mode-decimals { background: linear-gradient(135deg, var(--green), var(--green-dark)); }
-.mode-algebra  { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); }
+.mode-times     { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); }
+.mode-negatives { background: linear-gradient(135deg, var(--orange), var(--orange-dark)); }
+.mode-decimals  { background: linear-gradient(135deg, var(--green), var(--green-dark)); }
+.mode-algebra   { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); }
 
 .mode-emoji { font-size: 2rem; }
 .mode-name { font-size: 1.35rem; font-weight: 800; }
@@ -136,6 +139,7 @@ html, body {
   border-color: var(--blue);
   color: white;
 }
+.mode-negatives-theme .chip.selected { background: var(--orange); border-color: var(--orange); }
 .mode-decimals-theme .chip.selected { background: var(--green); border-color: var(--green); }
 .mode-algebra-theme .chip.selected { background: var(--purple); border-color: var(--purple); }
 
@@ -166,8 +170,9 @@ html, body {
 }
 .start-btn:active { transform: scale(.98); }
 
-.mode-decimals-theme .start-btn,
-#screen-game.theme-decimals ~ .start-btn { background: linear-gradient(135deg, var(--green), var(--green-dark)); }
+.mode-negatives-theme .start-btn { background: linear-gradient(135deg, var(--orange), var(--orange-dark)); }
+.mode-decimals-theme .start-btn { background: linear-gradient(135deg, var(--green), var(--green-dark)); }
+.mode-algebra-theme .start-btn { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); }
 
 .secondary-btn {
   margin-top: 12px;
@@ -224,6 +229,36 @@ html, body {
   background: linear-gradient(90deg, var(--blue), var(--purple));
   transition: width 1s linear;
 }
+
+.sign-hint {
+  display: none;
+  background: white;
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 14px -8px rgba(20,30,70,0.25);
+}
+.sign-hint-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 3px 0;
+}
+.sign-hint-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--muted);
+  min-width: 92px;
+}
+.sign-hint-eq {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.sign-hint-row.same .sign-hint-eq { background: #dcfce7; color: var(--green-dark); }
+.sign-hint-row.diff .sign-hint-eq { background: #fee2e2; color: #b91c1c; }
 
 .question-wrap {
   flex: 1;
@@ -303,6 +338,6 @@ html, body {
 .results-actions { display: flex; flex-direction: column; }
 
 @media (min-width: 640px) {
-  .mode-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .mode-grid { grid-template-columns: 1fr 1fr; }
   .mode-card { text-align: center; align-items: center; }
 }

@@ -13,6 +13,7 @@ const state = {
   current: null,        // {questionText, answer, options:[{label, correct}]}
   settings: {
     times: { tables: [2,3,4,5,6,7,8,9,10,11,12] },
+    negatives: { tables: [2,3,4,5,6,7,8,9,10,11,12], level: 1 },
     decimals: { level: 1 },
     algebra: { level: 1, variables: ['x','y'] }
   }
@@ -52,6 +53,10 @@ const SETTINGS_META = {
     title: 'Times Tables',
     themeClass: 'mode-times-theme'
   },
+  negatives: {
+    title: 'Negative Numbers',
+    themeClass: 'mode-negatives-theme'
+  },
   decimals: {
     title: 'Multiples & Decimals',
     themeClass: 'mode-decimals-theme'
@@ -72,6 +77,8 @@ function openSettings(mode) {
 
   if (mode === 'times') {
     body.appendChild(buildTimesSettings());
+  } else if (mode === 'negatives') {
+    body.appendChild(buildNegativesSettings());
   } else if (mode === 'decimals') {
     body.appendChild(buildDecimalsSettings());
   } else if (mode === 'algebra') {
@@ -107,6 +114,64 @@ function buildTimesSettings() {
   });
   wrap.appendChild(row);
   state.settings.times.tables = allTables.slice();
+  return wrap;
+}
+
+function buildNegativesSettings() {
+  const wrap = document.createElement('div');
+  const label = document.createElement('p');
+  label.className = 'settings-label';
+  label.textContent = 'Which tables?';
+  wrap.appendChild(label);
+
+  const row = document.createElement('div');
+  row.className = 'chip-row';
+  row.id = 'negatives-chips';
+
+  const allTables = [2,3,4,5,6,7,8,9,10,11,12];
+  allTables.forEach(t => {
+    const chip = document.createElement('button');
+    chip.className = 'chip selected';
+    chip.textContent = t + '×';
+    chip.dataset.table = t;
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('selected');
+      const selected = $$('#negatives-chips .chip.selected').map(c => Number(c.dataset.table));
+      state.settings.negatives.tables = selected.length ? selected : allTables;
+    });
+    row.appendChild(chip);
+  });
+  wrap.appendChild(row);
+  state.settings.negatives.tables = allTables.slice();
+
+  const levelLabel = document.createElement('p');
+  levelLabel.className = 'settings-label';
+  levelLabel.style.marginTop = '18px';
+  levelLabel.textContent = 'Difficulty';
+  wrap.appendChild(levelLabel);
+
+  const levelRow = document.createElement('div');
+  levelRow.className = 'chip-row';
+  levelRow.id = 'negatives-level-chips';
+  const levels = [
+    { level: 1, title: 'Level 1 — One negative number', desc: 'e.g. -6 × 7, 5 × -8 (always a negative answer)' },
+    { level: 2, title: 'Level 2 — Mixed signs', desc: 'e.g. -4 × -9 (two negatives too)' }
+  ];
+  levels.forEach((l, i) => {
+    const chip = document.createElement('button');
+    chip.className = 'chip level-chip' + (i === 0 ? ' selected' : '');
+    chip.dataset.level = l.level;
+    chip.innerHTML = `${l.title}<span class="chip-desc">${l.desc}</span>`;
+    chip.addEventListener('click', () => {
+      $$('#negatives-level-chips .chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      state.settings.negatives.level = l.level;
+    });
+    levelRow.appendChild(chip);
+  });
+  wrap.appendChild(levelRow);
+  state.settings.negatives.level = 1;
+
   return wrap;
 }
 
@@ -240,6 +305,47 @@ function genTimesQuestion() {
     const val = pick(strategies)();
     if (val > 0 && val !== answer) options.add(val);
   }
+  return {
+    questionText: `${a} × ${b}`,
+    answerLabel: String(answer),
+    options: shuffle(Array.from(options)).map(v => ({ label: String(v), correct: v === answer }))
+  };
+}
+
+/* ---- Times tables with negative numbers ---- */
+function genNegativesQuestion() {
+  const tables = state.settings.negatives.tables.length ? state.settings.negatives.tables : [2,3,4,5,6,7,8,9,10,11,12];
+  const level = state.settings.negatives.level || 1;
+  const aMag = pick(tables);
+  const bMag = randInt(1, 12);
+
+  let aSign, bSign;
+  if (level === 1) {
+    if (Math.random() < 0.5) { aSign = -1; bSign = 1; } else { aSign = 1; bSign = -1; }
+  } else {
+    aSign = Math.random() < 0.5 ? -1 : 1;
+    bSign = Math.random() < 0.5 ? -1 : 1;
+  }
+
+  const a = aSign * aMag;
+  const b = bSign * bMag;
+  const answer = a * b;
+
+  const options = new Set([answer]);
+  const strategies = [
+    () => -answer,
+    () => aSign * bSign * (aMag * (bMag + pick([-1,1]))),
+    () => aSign * bSign * ((aMag + pick([-1,1])) * bMag),
+    () => answer + pick([-10,-2,-1,1,2,10]),
+    () => -(aSign * bSign) * (aMag * bMag + pick([-2,-1,1,2]))
+  ];
+  let guard = 0;
+  while (options.size < 4 && guard < 30) {
+    guard++;
+    const val = pick(strategies)();
+    if (val !== answer && val !== 0) options.add(val);
+  }
+
   return {
     questionText: `${a} × ${b}`,
     answerLabel: String(answer),
@@ -406,6 +512,7 @@ function genAlgebraQuestion() {
 
 function generateQuestion() {
   if (state.mode === 'times') return genTimesQuestion();
+  if (state.mode === 'negatives') return genNegativesQuestion();
   if (state.mode === 'decimals') return genDecimalsQuestion();
   if (state.mode === 'algebra') return genAlgebraQuestion();
 }
@@ -426,6 +533,7 @@ function startGame() {
   $('#hud-score').textContent = '0';
   $('#hud-streak').textContent = '0';
   $('#hud-time-wrap').style.display = state.timerLength > 0 ? 'block' : 'none';
+  $('#sign-hint').style.display = state.mode === 'negatives' ? 'block' : 'none';
   $('#hud-time').textContent = state.timeLeft;
   $('#timer-bar').style.width = '100%';
   $('#timer-bar-wrap') && null;
