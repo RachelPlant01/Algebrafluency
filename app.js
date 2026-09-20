@@ -13,7 +13,7 @@ const state = {
   current: null,        // {questionText, answer, options:[{label, correct}]}
   settings: {
     times: { tables: [] },
-    squares: { type: 'mix' },
+    squares: { type: 'mix', level: 1 },
     negatives: { tables: [], level: 1 },
     decimals: { level: 1 },
     algebra: { level: 1, variables: ['x','y'] }
@@ -159,6 +159,37 @@ function buildSquaresSettings() {
   });
   wrap.appendChild(row);
   state.settings.squares.type = 'mix';
+
+  const levelLabel = document.createElement('p');
+  levelLabel.className = 'settings-label';
+  levelLabel.style.marginTop = '18px';
+  levelLabel.textContent = 'Difficulty';
+  wrap.appendChild(levelLabel);
+
+  const levelRow = document.createElement('div');
+  levelRow.className = 'chip-row';
+  levelRow.id = 'squares-level-chips';
+
+  const levels = [
+    { level: 1, title: 'Level 1 — Whole numbers only', desc: 'e.g. 7² = 49, √49 = ±7' },
+    { level: 2, title: 'Level 2 — Include negatives', desc: 'e.g. (-7)² = 49, √49 = ±7' },
+    { level: 3, title: 'Level 3 — Mix of everything', desc: 'e.g. 50² = 2500, 0.6² = 0.36, (-7)² = 49' }
+  ];
+  levels.forEach((l, i) => {
+    const chip = document.createElement('button');
+    chip.className = 'chip level-chip' + (i === 0 ? ' selected' : '');
+    chip.dataset.level = l.level;
+    chip.innerHTML = `${l.title}<span class="chip-desc">${l.desc}</span>`;
+    chip.addEventListener('click', () => {
+      $$('#squares-level-chips .chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      state.settings.squares.level = l.level;
+    });
+    levelRow.appendChild(chip);
+  });
+  wrap.appendChild(levelRow);
+  state.settings.squares.level = 1;
+
   return wrap;
 }
 
@@ -387,17 +418,21 @@ const SQUARES_SCALED_MAX = 9;  // magnitude 1-9 for the ×10 and ÷10 categories
 // multiple of ten (10-90) or a tenth (0.1-0.9). {mag, scale, max} matches
 // the {digit, scale} shape factorDisplay/coreScaleToDecimalString expect
 // (value = mag × 10^scale), so those helpers work unchanged here.
-function pickSquareBase() {
+function pickSquareBase(level) {
+  const whole = { mag: randInt(1, SQUARES_UNIT_MAX), scale: 0, max: SQUARES_UNIT_MAX };
+  if (level < 3) return whole;
+
   const roll = Math.random();
-  if (roll < 0.55) return { mag: randInt(1, SQUARES_UNIT_MAX), scale: 0, max: SQUARES_UNIT_MAX };
+  if (roll < 0.55) return whole;
   if (roll < 0.775) return { mag: randInt(1, SQUARES_SCALED_MAX), scale: 1, max: SQUARES_SCALED_MAX };
   return { mag: randInt(1, SQUARES_SCALED_MAX), scale: -1, max: SQUARES_SCALED_MAX };
 }
 
 function genSquaresQuestion() {
   const type = state.settings.squares.type || 'mix';
+  const level = state.settings.squares.level || 1;
   const isRoot = type === 'root' ? true : type === 'square' ? false : Math.random() < 0.5;
-  const base = pickSquareBase();
+  const base = pickSquareBase(level);
   const baseDisplay = factorDisplay({ digit: base.mag, scale: base.scale });
   const squareStr = coreScaleToDecimalString(base.mag * base.mag, base.scale * 2);
 
@@ -428,7 +463,7 @@ function genSquaresQuestion() {
   }
 
   // Square: sometimes a negative base, shown in brackets — e.g. (-7)² = 49.
-  const isNegative = Math.random() < 0.35;
+  const isNegative = level >= 2 && Math.random() < 0.35;
   const questionText = `${isNegative ? `(-${baseDisplay})` : baseDisplay}²`;
 
   const options = new Set([squareStr]);
